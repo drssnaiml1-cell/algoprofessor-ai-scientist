@@ -1,0 +1,89 @@
+\clearpage
+\section*{Monday--Saturday Project Homework: Field-Ready Plant Disease Classifier}
+\addcontentsline{toc}{section}{Monday--Saturday Project Homework}
+\begin{tcolorbox}[enhanced,colback=navy,colframe=gold,boxrule=0.8pt,arc=3pt,coltext=white,left=8pt,right=8pt,top=6pt,bottom=6pt]
+{\color{gold}\bfseries Weekly project.} Lab photos are clean; farmers' photos are not. You will build a classifier that is honest about the gap between the two and closes as much of it as possible.\\[3pt]
+{\color{gold}\bfseries Data:} PlantVillage (full, 38 classes) for training; PlantDoc (real field photos) for testing\\[3pt]
+{\color{gold}\bfseries Rhythm:} about 2--3 hours a day. Commit every day; tag \texttt{week-2} and create a GitHub Release by \textbf{Saturday 23:59 local time}. Mentors review it before the next Sunday.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Monday --- A 38-class image pipeline\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Build a leakage-free data pipeline at full scale.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Download PlantVillage (all 38 classes) and PlantDoc.
+  \item De-duplicate by perceptual hash (not only exact MD5); report how many near-duplicates you found.
+  \item Create stratified splits and a \texttt{torch.utils.data.Dataset} with augmentation (flip, rotate, colour jitter, random resized crop).
+  \item Map PlantDoc labels onto PlantVillage classes; document classes with no match.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} \texttt{src/data.py}, \texttt{reports/data\_card.md}\\
+\textbf{\color{navy}Done when:} No hash shared across splits; class counts per split tabulated; augmentation visualised on 8 images.\\
+\textbf{\color{skillC}Stretch:} Use \texttt{torchvision.transforms.v2} and benchmark loading speed with 0, 2 and 4 workers.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Tuesday --- Transfer learning versus training from scratch\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} See what pretraining buys.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item On a GPU (Colab or Kaggle), train ResNet-18 from scratch for 10 epochs.
+  \item Fine-tune an ImageNet-pretrained ResNet-18 for 10 epochs (freeze, then unfreeze).
+  \item Plot learning curves; report accuracy and macro-F1 on the PlantVillage test split.
+  \item Explain the difference in two paragraphs.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} \texttt{notebooks/02\_transfer.ipynb} with curves and a comparison table\\
+\textbf{\color{navy}Done when:} Same data, epochs and seed for both runs; macro-F1 reported.\\
+\textbf{\color{skillC}Stretch:} Add a learning-rate range test and one-cycle schedule.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Wednesday --- Modern backbones and mixed precision\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Compare architectures fairly.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Fine-tune EfficientNet-B0 and a small ViT with \texttt{timm}, using mixed precision.
+  \item Record parameters, training time per epoch, GPU memory and test macro-F1 for each.
+  \item Build a confusion matrix for the best model; list the 3 most confused class pairs.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} Comparison table and confusion matrix in \texttt{reports/backbones.md}\\
+\textbf{\color{navy}Done when:} All three models compared on identical splits; costs (time, memory) reported next to accuracy.\\
+\textbf{\color{skillC}Stretch:} Try ConvNeXt-Tiny or a distilled ViT (DeiT).
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Thursday --- Robustness on real field photos\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Measure and close the lab-to-field gap.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Evaluate your best model on PlantDoc field photos; report the accuracy drop.
+  \item Retrain with stronger augmentation (blur, noise, brightness, background cut-and-paste) and re-test.
+  \item Build a Grad-CAM gallery of 12 field failures and group them by cause.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} \texttt{reports/robustness.md} with before/after tables and the Grad-CAM gallery\\
+\textbf{\color{navy}Done when:} Lab vs field accuracy reported for both training recipes; failure causes categorised.\\
+\textbf{\color{skillC}Stretch:} Fine-tune on 10\% of PlantDoc and measure how much labelled field data helps.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Friday --- Calibration, quantisation and edge deployment\hfill\normalfont\small 2--3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Make it small, fast and honest about uncertainty.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Measure calibration (expected calibration error) and apply temperature scaling.
+  \item Add a 'not sure' answer below a confidence threshold; report coverage vs accuracy.
+  \item Export to ONNX, quantise to INT8, and benchmark CPU latency (median and p95 over 200 images).
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} \texttt{models/leafdoctor\_int8.onnx}, \texttt{reports/deploy.md}\\
+\textbf{\color{navy}Done when:} ECE before and after scaling; latency table; INT8 accuracy within 1 point of FP32 or explained.\\
+\textbf{\color{skillC}Stretch:} Run the ONNX model in a browser with ONNX Runtime Web.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Saturday --- Demo app and model card\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Ship it.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Build a Gradio or Streamlit app: upload a leaf photo, get the top-3 diseases with confidence and Grad-CAM.
+  \item Write \texttt{MODEL\_CARD.md} covering lab vs field performance and the 'not sure' policy.
+  \item Record a 5-minute demo; push, tag \texttt{week-2}, create a Release.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} App, model card, demo link, Release \texttt{week-2}\\
+\textbf{\color{navy}Done when:} App works on a phone photo; model card states field accuracy, not only lab accuracy.\\
+\textbf{\color{skillC}Stretch:} Deploy on Hugging Face Spaces.
+\end{tcolorbox}
+

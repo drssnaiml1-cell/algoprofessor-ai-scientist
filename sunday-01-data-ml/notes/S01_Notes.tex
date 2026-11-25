@@ -3,83 +3,244 @@
 \setsunday{1}
 \begin{document}
 
-\notestitle{Data \& Machine Learning Foundations}{1--5}{Think like a data scientist: frame a business problem, clean data, build and explain a model, track experiments, and ship project \textbf{P1 --- Churn Intelligence} to GitHub by 18:00.}
+\notestitle{Data \& Machine Learning Foundations}{1--5}{Think like a data scientist: frame a business problem, describe data with statistics, train and validate models, explain them, track experiments, and ship \textbf{P1 --- Churn Intelligence} by 18:00.}
+
+\section*{How to use these notes}
+These notes follow the Sunday 1 slides topic by topic and explain each step in full. Every topic is taught in the same order, and every box colour means the same thing as on the slides:
+\legendbox
+Numbers in \emph{Our notebook result} boxes come from running \texttt{notebooks/S01\_Data\_ML\_Foundations.ipynb}. The last section is your \textbf{Monday--Saturday project homework}.
 
 \begin{tabularx}{\linewidth}{@{}c c X l@{}}
 \toprule
 \textbf{Hour} & \textbf{Mode} & \textbf{Focus} & \textbf{Dataset}\\
 \midrule
-1 & \teachtag & Scientific Python and exploratory data analysis (EDA) & \ds{UCI Adult Income}\\
-2 & \teachtag & ML pipelines, cross-validation, gradient boosting & \ds{California Housing}\\
-3 & \buildtag & Churn project: problem framing and a baseline & \ds{IBM Telco Churn}\\
-4 & \buildtag & Class imbalance, Optuna tuning, SHAP explanations & \ds{IBM Telco Churn}\\
-5 & \buildtag & MLflow tracking, repository, stakeholder summary & \ds{Telco + MLflow runs}\\
+1 & \teachtag & What ML is, data types, statistics, EDA & \ds{UCI Adult Income}\\
+2 & \teachtag & Regression, gradient descent, cross-validation, boosting & \ds{California Housing}\\
+3 & \buildtag & Classification, logistic regression, metrics & \ds{IBM Telco Churn}\\
+4 & \buildtag & Imbalance, hyperparameter search, SHAP & \ds{IBM Telco Churn}\\
+5 & \buildtag & Experiment tracking, Git, storytelling & \ds{Telco + MLflow}\\
 \bottomrule
 \end{tabularx}
 
-\medskip
-Companion notebook: \texttt{notebooks/S01\_Data\_ML\_Foundations.ipynb}. Every number in a green box below was produced by running it.
+\begin{bdef}[Learning objectives]
+By the end of today you can (1) define machine learning and its three main types; (2) describe a dataset with statistics and plots; (3) train and compare regression models with cross-validation; (4) build and evaluate a classifier on imbalanced data; (5) tune hyperparameters and explain predictions with SHAP; (6) track experiments and publish a project on GitHub.\\[2pt]
+\textbf{Prerequisites:} Python basics (loops, functions, lists, dictionaries) and school algebra.
+\end{bdef}
 
-%% ------------------------------------------------------------------
-\hourhead{1}{TEACH}{Scientific Python \& Exploratory Data Analysis}{UCI Adult Income (48,842 rows)}{NumPy, Pandas, Matplotlib, data cleaning, EDA reasoning}
+%% =====================================================================
+\hourhead{1}{TEACH}{What machine learning is, and how to read data}{UCI Adult Income (48,842 rows)}{NumPy, Pandas, statistics, data cleaning, EDA reasoning}
 
-\subsection{Why vectorisation matters}
-A Python loop handles one number at a time. NumPy applies the same operation to a whole array in compiled code.
+\topic{What is machine learning?}
+\begin{bdef}[Machine learning]
+A program \emph{learns} when its performance on a task, measured by some score, improves with experience (data). Instead of writing the rules ourselves, we give examples and an algorithm finds the rules.
+\end{bdef}
+Traditional software is written as explicit rules: ``if the email contains \emph{lottery}, mark it as spam''. Rules like these break as soon as the world changes. Machine learning turns the problem around: we collect thousands of emails already labelled spam or not spam, and an algorithm searches for the rule that best separates them. When spammers change tactics, we retrain on new examples instead of rewriting code.
+
+\begin{bex}[The three main types]
+\textbf{Supervised learning} --- every example comes with the right answer (a label). Predicting house prices or whether a customer will leave.\\
+\textbf{Unsupervised learning} --- no labels; the algorithm finds structure on its own. Grouping customers into segments or flagging unusual transactions.\\
+\textbf{Reinforcement learning} --- an agent tries actions and receives rewards. Game playing, robot control, ad bidding.
+\end{bex}
+
+\begin{bmath}[Supervised learning in one line]
+Given data $\mathcal{D}=\{(x_i,y_i)\}_{i=1}^{n}$, find parameters $\theta$ of a model $f_\theta$ that minimise the average loss
+\[\hat\theta=\arg\min_\theta\;\frac1n\sum_{i=1}^{n}\ell\big(f_\theta(x_i),\,y_i\big).\]
+\end{bmath}
+Everything we do this week is a version of this line: choose a model family $f_\theta$, choose a loss $\ell$ that measures how wrong a prediction is, and use an algorithm to find good $\theta$. The rest of machine learning is about doing this \emph{without fooling ourselves} --- making sure the model works on data it has never seen.
+
+\topic{Kinds of data}
+\begin{bdef}[Data types]
+\textbf{Numerical} (age, income) $\cdot$ \textbf{categorical} (city, contract type) $\cdot$ \textbf{ordinal} (low $<$ medium $<$ high) $\cdot$ \textbf{text} $\cdot$ \textbf{images} $\cdot$ \textbf{time series}.
+\end{bdef}
+Most business data is \emph{tabular}: each row is one example (a person, a house, a customer), each column is a feature, and one column is the target $y$ we want to predict. The type of each column decides how we prepare it: numbers are scaled, categories are one-hot encoded, ordinal values keep their order.
+
+\begin{bex}[One row of Adult Income]
+age 39 $\cdot$ workclass \emph{State-gov} $\cdot$ education \emph{Bachelors} $\cdot$ 40 hours per week $\cdot$ income \emph{$\le$50K}. Here \emph{income} is the target; everything else is a candidate feature.
+\end{bex}
+
+\begin{bwarn}[Feature or target? Watch for leakage]
+A column that is only known \emph{after} the event leaks the answer. When predicting churn, ``refund issued'' or ``cancellation reason'' would give perfect scores in testing and be useless in real life, because at prediction time they do not exist yet.
+\end{bwarn}
+
+\topic{Descriptive statistics}
+Before modelling we summarise each column. Three questions matter: where is the centre, how spread out is it, and how does it relate to the target?
+\begin{bmath}[Centre, spread and relationship]
+Mean $\bar x=\frac1n\sum_i x_i$ \qquad Variance $s^2=\frac{1}{n-1}\sum_i (x_i-\bar x)^2$ \qquad Standard deviation $s=\sqrt{s^2}$\\[3pt]
+Median: the middle value after sorting. Quantile $q_p$: the value below which a share $p$ of the data lies.\\[3pt]
+Pearson correlation: $\;r=\dfrac{\sum_i (x_i-\bar x)(y_i-\bar y)}{\sqrt{\sum_i (x_i-\bar x)^2}\,\sqrt{\sum_i (y_i-\bar y)^2}}\in[-1,1]$
+\end{bmath}
+We divide by $n-1$ rather than $n$ in the sample variance because $\bar x$ was itself estimated from the same data; this correction makes the estimate unbiased. Correlation measures only \emph{linear} association: two variables can be strongly related along a curve and still have $r$ close to 0, so always look at a plot too.
+
+\begin{bex}[Mean versus median]
+Ages $3,4,5,6,32$: the mean is $10$ but the median is $5$. One outlier moved the mean a lot and the median not at all. Incomes, house prices and waiting times are usually skewed like this, so report the median alongside the mean.
+\end{bex}
+
+\topic{Vectorisation with NumPy}
+\begin{bdef}[Vectorisation]
+Applying one operation to a whole array at once, in compiled code, instead of looping over elements in Python.
+\end{bdef}
+Python executes a loop one element at a time and checks types at every step. NumPy stores numbers in one contiguous block of memory and runs the operation in optimised C, often using several values per CPU instruction. The maths is identical --- for example a dot product $x\cdot x=\sum_i x_i^2$ --- but it runs far faster.
+\begin{bcode}
 \begin{lstlisting}
+import numpy as np
 x = np.random.rand(1_000_000)
-s_loop = sum(v * v for v in x)      # slow: interpreted loop
-s_vec  = np.dot(x, x)               # fast: one call into optimised C
+s_loop = sum(v * v for v in x)   # interpreted loop: slow
+s_vec  = np.dot(x, x)            # one call into compiled code: fast
+z = (x - x.mean()) / x.std()     # standardise every value, no loop needed
 \end{lstlisting}
-\begin{resultbox}
-Python loop 135.2\,ms versus NumPy 0.9\,ms --- about \textbf{154$\times$ faster}, same answer.
-\end{resultbox}
+\end{bcode}
+\begin{bres}
+Python loop 135.2\,ms versus NumPy 0.9\,ms --- about \textbf{154$\times$ faster}, with the same answer.
+\end{bres}
 
-\subsection{A data-quality checklist}
-Before any model, answer five questions about every dataset:
-\begin{enumerate}
-  \item \textbf{Shape and types} --- how many rows and columns; which are numeric, which categorical?
-  \item \textbf{Missing values} --- how many, in which columns, and \emph{why} are they missing?
-  \item \textbf{Duplicates} --- exact repeated rows inflate evaluation scores.
-  \item \textbf{Target balance} --- what share of rows are positive?
-  \item \textbf{Leakage} --- does any column contain information you would not have at prediction time?
-\end{enumerate}
-\begin{resultbox}
-Adult: 48,842 rows. Missing (``?''): \texttt{workclass} 5.73\%, \texttt{occupation} 5.75\%, \texttt{native\_country} 1.75\%. 52 duplicate rows removed. After cleaning, 23.9\% of people earn more than \$50K.
-\end{resultbox}
+\topic{The EDA algorithm}
+\begin{bdef}[Exploratory data analysis (EDA)]
+A structured first look at a dataset to understand its quality, its shape and its relationship to the target before any modelling.
+\end{bdef}
+\begin{balgo}[Exploratory data analysis]
+\begin{algorithmic}[1]
+\Require table $T$, target column $y$
+\State Profile shape, column types and number of unique values
+\State Count missing values per column and ask \emph{why} they are missing
+\State Remove exact duplicate rows
+\State Check the balance of the target
+\For{each feature $x_j$}
+  \State Plot its distribution and note outliers
+  \State Plot the target against $x_j$
+\EndFor
+\State Write three findings and three open questions
+\end{algorithmic}
+\end{balgo}
+The last step is the important one: EDA should end in written findings that change what you do next --- which columns to clean, which to engineer, which to drop, and what to ask the data owner.
 
-\begin{keyidea}[Missing is information]
-Filling \texttt{occupation} with the mode hides a pattern. Making ``Unknown'' an explicit category keeps the rows \emph{and} lets the model learn whether missingness itself is predictive. Write every cleaning decision in your README.
-\end{keyidea}
+\begin{bdef}[Why values go missing]
+\textbf{MCAR} (missing completely at random): unrelated to anything. \textbf{MAR} (missing at random): depends on other observed columns. \textbf{MNAR} (missing not at random): depends on the missing value itself --- for example high earners leaving income blank.
+\end{bdef}
+The reason matters because it decides the fix. MCAR values can be dropped or imputed safely. MAR values can be imputed from other columns. MNAR values carry information, so we keep a ``missing'' indicator or category rather than pretending we know the value.
 
-\figw[0.98]{s1_adult_eda.png}{EDA on Adult Income: share above \$50K rises with years of education; the higher-income group is older.}
-
-\begin{resultbox}
-Share earning more than \$50K: \textbf{30.4\%} of men versus \textbf{10.9\%} of women. This gap is a question to investigate, not just a feature --- we return to it in the Sunday 6 fairness audit.
-\end{resultbox}
-
-%% ------------------------------------------------------------------
-\hourhead{2}{TEACH}{Supervised ML pipelines, cross-validation, gradient boosting}{California Housing (20,640 districts)}{scikit-learn Pipelines, k-fold CV, XGBoost, feature engineering}
-
-\subsection{The golden rule: never touch the test set until the end}
-Split once into training (80\%) and test (20\%). Choose models using $k$-fold cross-validation on the training part only:
-\[
-\mathrm{CV\ RMSE}=\frac{1}{k}\sum_{i=1}^{k}\sqrt{\frac{1}{|F_i|}\sum_{j\in F_i}(y_j-\hat y_j)^2}
-\]
-where $F_i$ is the $i$-th fold, scored by a model trained on the other $k-1$ folds.
-
-\subsection{Pipelines prevent leakage}
-A \texttt{Pipeline} learns imputation and scaling \emph{inside each fold}, so statistics from validation rows never leak into training.
+\begin{bcode}
 \begin{lstlisting}
+adult = pd.read_csv(path, header=None, names=cols, na_values="?", skipinitialspace=True)
+quality = pd.DataFrame({"missing": adult.isna().sum(), "unique": adult.nunique()})
+adult = adult.drop_duplicates()
+adult["occupation"] = adult["occupation"].fillna("Unknown")   # keep the rows, keep the signal
+adult.groupby("education_num")["high_income"].mean().plot(marker="o")
+\end{lstlisting}
+\end{bcode}
+\figw[0.98]{s1_adult_eda.png}{EDA on Adult Income: the share above \$50K rises with years of education, and the higher-income group is older.}
+
+\begin{bres}
+48,842 rows. Missing (``?''): \texttt{workclass} 5.73\%, \texttt{occupation} 5.75\%, \texttt{native\_country} 1.75\%. 52 duplicate rows removed. After cleaning, 23.9\% earn more than \$50K. Share above \$50K: men \textbf{30.4\%}, women \textbf{10.9\%}.
+\end{bres}
+
+\begin{bapp}
+Governments analyse census and labour-market data this way; banks and insurers do it before every credit or pricing model; every Kaggle competition starts with EDA. Business-intelligence products such as Tableau, Power BI and Looker are built around it, and \texttt{ydata-profiling} automates a first pass.
+\end{bapp}
+\begin{bwarn}[A gap is a question, not just a feature]
+The difference between men and women in the target is something to investigate and document, not simply a pattern to exploit. We audit this dataset for fairness on Sunday 6.
+\end{bwarn}
+
+%% =====================================================================
+\hourhead{2}{TEACH}{Regression, gradient descent, cross-validation, boosting}{California Housing (20,640 districts)}{scikit-learn pipelines, k-fold CV, XGBoost, feature engineering}
+
+\topic{Linear regression}
+\begin{bdef}[Regression]
+Predicting a \emph{number}. Linear regression assumes the target is a weighted sum of the features plus random noise.
+\end{bdef}
+\begin{bmath}[Model, loss and closed-form solution]
+Model: $\hat y=\theta_0+\theta_1x_1+\dots+\theta_dx_d=x^\top\theta$ (with $x_0=1$).\\[3pt]
+Loss: $\mathrm{MSE}(\theta)=\frac1n\sum_i(y_i-x_i^\top\theta)^2=\frac1n\lVert y-X\theta\rVert^2$.\\[3pt]
+Setting the gradient $\nabla_\theta\mathrm{MSE}=-\frac2nX^\top(y-X\theta)$ to zero gives the \emph{normal equation} $\;\theta^\ast=(X^\top X)^{-1}X^\top y$.
+\end{bmath}
+The normal equation is exact but needs to invert a $d\times d$ matrix, which becomes expensive with many features and unstable when features are highly correlated. That is why, in practice, we use iterative methods such as gradient descent, often with a penalty on large weights (ridge regression).
+
+\begin{bex}[Reading the coefficients]
+Price $\approx \theta_0 + \theta_1\cdot\text{median income} + \theta_2\cdot\text{rooms per household}+\dots$ Each $\theta_j$ says how much the predicted price moves for one unit of that feature \emph{holding the others fixed}. This interpretability is why linear models remain the first baseline.
+\end{bex}
+
+\topic{Gradient descent}
+\begin{bdef}[Gradient descent]
+An iterative method that repeatedly moves the parameters a small step in the direction that decreases the loss fastest --- downhill on the loss surface.
+\end{bdef}
+\begin{bmath}[Update rule]
+$\theta\leftarrow\theta-\eta\,\nabla_\theta\mathcal{L}(\theta)$, \;where the learning rate $\eta>0$ sets the step size.
+\end{bmath}
+\begin{bex}[One step by hand]
+Minimise $f(\theta)=(\theta-3)^2$ starting at $\theta=0$ with $\eta=0.1$. The gradient is $2(\theta-3)=-6$, so the new $\theta=0-0.1\cdot(-6)=0.6$. Repeating moves $\theta$ towards 3. With $\eta=1.1$ the steps overshoot and diverge --- the learning rate matters.
+\end{bex}
+\begin{balgo}[Batch gradient descent for linear regression]
+\begin{algorithmic}[1]
+\Require $X$, $y$, learning rate $\eta$, number of steps $T$
+\State $\theta\gets 0$
+\For{$t=1$ to $T$}
+  \State $g\gets -\frac{2}{n}X^\top(y-X\theta)$ \Comment{gradient of MSE}
+  \State $\theta\gets\theta-\eta g$
+\EndFor
+\State \Return $\theta$
+\end{algorithmic}
+\end{balgo}
+Using the whole dataset for every step is \emph{batch} gradient descent. Using small random subsets (mini-batches) is \emph{stochastic} gradient descent; it is noisier but much cheaper per step, and it is how neural networks are trained on Sunday 2.
+
+\topic{Generalisation: bias, variance and cross-validation}
+\begin{bdef}[Overfitting and underfitting]
+A model \textbf{overfits} when it fits training data well but new data badly --- it has memorised noise. It \textbf{underfits} when it is too simple to capture the real pattern even on training data.
+\end{bdef}
+\begin{bmath}[Bias--variance decomposition]
+For squared error, $\;\mathbb{E}\big[(y-\hat f(x))^2\big]=\underbrace{\mathrm{Bias}[\hat f(x)]^2}_{\text{model too simple}}+\underbrace{\mathrm{Var}[\hat f(x)]}_{\text{model too sensitive}}+\underbrace{\sigma^2}_{\text{noise}}$.
+\end{bmath}
+A straight line through curved data has high bias; a very deep tree that changes completely when one row changes has high variance. Good models balance the two, and the irreducible noise $\sigma^2$ sets a floor no model can beat.
+
+\begin{balgo}[$k$-fold cross-validation]
+\begin{algorithmic}[1]
+\Require training data, model, $k$
+\State Shuffle and split the training data into $k$ equal folds
+\For{$i=1$ to $k$}
+  \State Train on all folds except fold $i$
+  \State Score on fold $i$
+\EndFor
+\State \Return mean and standard deviation of the $k$ scores
+\end{algorithmic}
+\end{balgo}
+Cross-validation gives a more reliable estimate than a single validation split, and its standard deviation tells you how much of a difference between two models is just noise. The separate test set is used \textbf{once}, at the very end, to report the final number.
+
+\topic{Trees, forests and gradient boosting}
+\begin{bdef}[Decision tree and ensembles]
+A \textbf{decision tree} splits the data with yes/no questions (``median income $>$ 5?''), choosing each split to make the branches as pure as possible. A \textbf{random forest} averages many trees trained on bootstrap samples, which reduces variance. \textbf{Gradient boosting} adds small trees one at a time, each correcting the errors of the current model, which reduces bias.
+\end{bdef}
+\begin{balgo}[Gradient boosting with squared loss]
+\begin{algorithmic}[1]
+\State $F_0(x)\gets \bar y$ \Comment{start from the mean}
+\For{$m=1$ to $M$}
+  \State residuals $r_i\gets y_i-F_{m-1}(x_i)$
+  \State fit a small tree $h_m$ to the pairs $(x_i,r_i)$
+  \State $F_m\gets F_{m-1}+\eta\,h_m$ \Comment{small learning rate $\eta$}
+\EndFor
+\State \Return $F_M$
+\end{algorithmic}
+\end{balgo}
+\begin{bmath}[XGBoost's regularised objective]
+$\displaystyle\sum_i \ell(y_i,\hat y_i)+\sum_k\Big(\gamma T_k+\tfrac12\lambda\lVert w_k\rVert^2\Big)$, where tree $k$ has $T_k$ leaves with weights $w_k$. The penalty discourages large, deep trees.
+\end{bmath}
+Each new tree fits the residuals --- for squared loss, exactly the negative gradient of the loss --- which is why the method is called \emph{gradient} boosting.
+
+\topic{Pipelines and metrics}
+\begin{bcode}
+\begin{lstlisting}
+h["rooms_per_household"] = h.total_rooms / h.households        # feature engineering
 prep = ColumnTransformer([
   ("num", Pipeline([("impute", SimpleImputer(strategy="median")),
                     ("scale", StandardScaler())]), num_cols),
   ("cat", OneHotEncoder(handle_unknown="ignore"), ["ocean_proximity"])])
-pipe = Pipeline([("prep", prep), ("model", XGBRegressor(n_estimators=400))])
+pipe = Pipeline([("prep", prep), ("model", XGBRegressor(n_estimators=400, learning_rate=0.08))])
+rmse = -cross_val_score(pipe, X_tr, y_tr, cv=5, scoring="neg_root_mean_squared_error")
 \end{lstlisting}
-
-\textbf{Feature engineering.} Ratios such as rooms per household, bedrooms per room and people per household carry more signal than raw totals.
-
-\begin{resultbox}[From our notebook run: 5-fold CV on the training set]
+\end{bcode}
+A \texttt{Pipeline} learns imputation and scaling \emph{inside each fold}, so statistics from validation rows never leak into training. Ratios such as rooms per household carry more signal than raw totals, because a large district naturally has more rooms.
+\begin{bmath}[Regression metrics]
+$\mathrm{RMSE}=\sqrt{\tfrac1n\sum(y_i-\hat y_i)^2}$ (penalises large errors) \qquad $\mathrm{MAE}=\tfrac1n\sum|y_i-\hat y_i|$ (robust)\\[2pt]
+$R^2=1-\dfrac{\sum(y_i-\hat y_i)^2}{\sum(y_i-\bar y)^2}$ (share of variance explained; 1 is perfect, 0 equals predicting the mean)
+\end{bmath}
+\begin{bres}[5-fold CV on the training set, then one test evaluation]
 \begin{tabular}{lrr}
 \toprule
 Model & CV RMSE (\$) & std\\
@@ -88,57 +249,135 @@ XGBoost & 45,339 & 967\\
 Random forest & 50,258 & 1,038\\
 Linear regression & 67,859 & 1,312\\
 \bottomrule
-\end{tabular}\\[4pt]
+\end{tabular}\\[3pt]
 Final XGBoost on the untouched test set: \textbf{RMSE \$44,355, $R^2=0.850$}.
-\end{resultbox}
+\end{bres}
+\figw[0.46]{s1_housing_pred.png}{Predicted versus actual values. The horizontal band at \$500,001 is a cap in the data.}
+\begin{bapp}
+Property valuation (for example Zillow's Zestimate), retail demand and sales forecasting, insurance claim costs and delivery-time estimates. Gradient boosting libraries --- XGBoost, LightGBM, CatBoost --- are the usual winners on tabular data in industry and competitions.
+\end{bapp}
+\begin{bwarn}[Capped targets]
+California Housing truncates expensive districts at \$500,001. Spot such artefacts during EDA and state how you handled them.
+\end{bwarn}
 
-\figw[0.48]{s1_housing_pred.png}{Predicted versus actual house values. The horizontal band at \$500,001 is a cap in the data, not a model failure.}
+%% =====================================================================
+\hourhead{3}{BUILD}{Classification: logistic regression and metrics}{IBM Telco Customer Churn (7,043 customers)}{Problem framing, baselines, F1, ROC-AUC}
 
-\begin{pitfall}[Capped targets]
-California Housing truncates expensive districts at \$500,001. Spot such artefacts during EDA and say how you handled them (keep, drop, or model separately).
-\end{pitfall}
+\topic{Frame the problem first}
+\begin{bdef}[Problem framing]
+Writing down the decision the model supports, the unit of prediction, the target and when it is known, and the metric that reflects the cost of mistakes --- before writing any model code.
+\end{bdef}
+\begin{balgo}[Frame before you model]
+\begin{algorithmic}[1]
+\State State the business question and the decision it drives
+\State Fix the unit of prediction (here: one customer)
+\State Define the target and the moment of prediction
+\State Choose a metric tied to the cost of errors
+\State Build a dummy baseline, then the simplest real model
+\end{algorithmic}
+\end{balgo}
+For P1 the question is: \emph{which customers are likely to cancel next month, so the retention team can call them first?} The prediction is made per customer, the target is \texttt{Churn = Yes}, and we report ROC-AUC (ranking quality, because the team calls customers in order of risk) and F1 for the churn class.
 
-%% ------------------------------------------------------------------
-\hourhead{3}{BUILD}{Churn project: problem framing and a baseline}{IBM Telco Customer Churn (7,043 customers)}{Problem framing, baseline thinking, F1 / ROC-AUC}
+\topic{Logistic regression}
+\begin{bdef}[Classification]
+Predicting a \emph{category}. A binary classifier outputs the probability of the positive class --- here, that the customer churns.
+\end{bdef}
+\begin{bmath}[Sigmoid and log loss]
+$p=\sigma(z)=\dfrac{1}{1+e^{-z}}$ with $z=x^\top\theta$ maps any score to $(0,1)$.\\[3pt]
+Log loss: $\mathcal{L}=-\frac1n\sum_i\big[y_i\log p_i+(1-y_i)\log(1-p_i)\big]$. Predict churn when $p\ge t$ (threshold, default 0.5).
+\end{bmath}
+Log loss punishes confident wrong answers heavily: predicting $p=0.01$ for a customer who does churn costs $-\log 0.01\approx4.6$, while $p=0.6$ costs only $0.51$.
+\begin{bex}[Reading a coefficient]
+A coefficient $\theta_j=0.7$ for ``month-to-month contract'' multiplies the \emph{odds} of churning, $p/(1-p)$, by $e^{0.7}\approx2.0$ --- twice the odds, all else equal.
+\end{bex}
 
-\subsection{Frame the problem before you model it}
-\begin{tabularx}{\linewidth}{@{}l X@{}}
-\textbf{Business question} & Which customers are likely to cancel next month, so the retention team can call them first?\\
-\textbf{Unit of prediction} & One customer.\\
-\textbf{Target} & \texttt{Churn = Yes}.\\
-\textbf{Metrics} & ROC-AUC (ranking quality) and F1 for the churn class.\\
-\end{tabularx}
+\topic{The confusion matrix and its metrics}
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{c|c|c}
+ & \textbf{predicted churn} & \textbf{predicted stay}\\\hline
+\textbf{actually churned} & TP (caught) & FN (missed)\\\hline
+\textbf{actually stayed} & FP (false alarm) & TN\\
+\end{tabular}
+\end{center}
+\begin{bmath}[Metrics]
+Precision $P=\frac{TP}{TP+FP}$ (of those we flagged, how many really churn?) \qquad Recall $R=\frac{TP}{TP+FN}$ (of real churners, how many did we catch?)\\[3pt]
+$F_1=\frac{2PR}{P+R}$ (harmonic mean) \qquad Accuracy $=\frac{TP+TN}{\text{all}}$\\[3pt]
+ROC-AUC $=P(\text{score of a random churner}>\text{score of a random stayer})$; 0.5 is random, 1.0 is perfect ranking.
+\end{bmath}
+\begin{bex}[Worked example]
+Of 100 real churners the model catches 60 (TP) and misses 40 (FN), and it also wrongly flags 20 loyal customers (FP). Then $P=60/80=0.75$, $R=60/100=0.60$, $F_1=2(0.75)(0.60)/1.35=0.667$.
+\end{bex}
+\begin{bcode}
+\begin{lstlisting}
+dummy = DummyClassifier(strategy="most_frequent")
+logit = LogisticRegression(max_iter=2000)
+p = Pipeline([("prep", prep), ("model", logit)]).fit(X_tr, y_tr).predict_proba(X_te)[:, 1]
+print(roc_auc_score(y_te, p), f1_score(y_te, p >= 0.5))
+\end{lstlisting}
+\end{bcode}
+\begin{bres}
+Churn rate 26.5\% (month-to-month 42.7\%, one-year 11.3\%, two-year 2.8\%). Dummy: ROC-AUC 0.500, F1 0.000, yet about 73\% accuracy. Logistic regression: \textbf{ROC-AUC 0.846, F1 0.607}.
+\end{bres}
+\begin{bwarn}[Accuracy hides failure]
+A model that never predicts churn is 73\% accurate and completely useless. On imbalanced problems always report a class-aware metric and compare against a dummy baseline.
+\end{bwarn}
+\begin{bapp}
+Retention teams in telecom, streaming, SaaS and banking use churn scores to decide whom to call or offer a discount. CRM platforms such as Salesforce and HubSpot provide churn and lead scoring built on these models.
+\end{bapp}
 
-\begin{defbox}[Metrics for imbalanced classes]
-Precision $P=\frac{TP}{TP+FP}$, recall $R=\frac{TP}{TP+FN}$, and $F_1=\frac{2PR}{P+R}$.
-ROC-AUC is the probability that a random churner gets a higher score than a random non-churner.
-\end{defbox}
+%% =====================================================================
+\hourhead{4}{BUILD}{Imbalance, hyperparameter search, explainability}{IBM Telco Customer Churn}{Class weighting, Optuna, SHAP}
 
-\begin{resultbox}
-Churn rate 26.5\%. By contract: month-to-month 42.7\%, one-year 11.3\%, two-year 2.8\%.\\
-Majority-class dummy: ROC-AUC 0.500, F1 0.000 --- yet about 73\% accuracy.\\
-Logistic regression: ROC-AUC 0.846, F1 0.607.
-\end{resultbox}
+\topic{Class imbalance}
+\begin{bdef}[Imbalanced data]
+One class is much rarer than the other (here 26.5\% churners). Unadjusted models drift towards predicting the majority class.
+\end{bdef}
+\begin{bmath}[Weighted loss]
+$\mathcal{L}_w=-\frac1n\sum_i\big[w_1\,y_i\log p_i+(1-y_i)\log(1-p_i)\big]$, with $w_1=\frac{\#\text{negatives}}{\#\text{positives}}=2.77$ for our training set.
+\end{bmath}
+Weighting makes each churner count 2.77 times as much as a non-churner in the loss, so the model can no longer ignore them. Alternatives are re-sampling (SMOTE, undersampling) and moving the decision threshold to match the real costs of errors.
 
-\begin{pitfall}[Accuracy hides failure]
-A model that never predicts churn is 73\% accurate and completely useless. On imbalanced problems, always report a class-aware metric and compare against a dummy baseline.
-\end{pitfall}
-
-%% ------------------------------------------------------------------
-\hourhead{4}{BUILD}{Improve the model: imbalance, Optuna, SHAP}{IBM Telco Customer Churn}{Optuna, class weighting, SHAP explainability}
-
-\textbf{Class weighting.} Instead of oversampling, weight positive examples by $\frac{\#\text{negatives}}{\#\text{positives}}=2.77$ (\texttt{scale\_pos\_weight}).
-
-\textbf{Optuna} searches hyperparameters with a Bayesian sampler (TPE): it proposes settings, scores them with cross-validation, and focuses on promising regions.
+\topic{Hyperparameter optimisation}
+\begin{bdef}[Hyperparameter]
+A setting chosen \emph{before} training --- tree depth, learning rate, number of trees --- rather than learned from the data.
+\end{bdef}
+Grid search tries every combination and wastes most trials on bad regions. Random search is surprisingly strong. Bayesian optimisation, as in Optuna's TPE sampler, learns from past trials which regions look promising and samples there more often.
+\begin{balgo}[Bayesian optimisation (Optuna, TPE)]
+\begin{algorithmic}[1]
+\For{trial $=1$ to $N$}
+  \State propose settings $\lambda$ that past trials suggest will score well
+  \State score $\lambda$ by cross-validation on the training set
+  \State update the model of ``good'' and ``bad'' regions
+\EndFor
+\State \Return the best $\lambda$
+\end{algorithmic}
+\end{balgo}
+\begin{bcode}
 \begin{lstlisting}
 def objective(trial):
     params = dict(max_depth=trial.suggest_int("max_depth", 2, 6),
-                  learning_rate=trial.suggest_float("learning_rate", 0.01, 0.2, log=True), ...)
-    return cross_val_score(make_pipe(params), X_tr, y_tr, cv=4, scoring="roc_auc").mean()
+                  learning_rate=trial.suggest_float("learning_rate", 0.01, 0.2, log=True),
+                  n_estimators=trial.suggest_int("n_estimators", 100, 500))
+    pipe = Pipeline([("prep", prep), ("model", XGBClassifier(**params, scale_pos_weight=2.77))])
+    return cross_val_score(pipe, X_tr, y_tr, cv=4, scoring="roc_auc").mean()
 study = optuna.create_study(direction="maximize"); study.optimize(objective, n_trials=25)
 \end{lstlisting}
+\end{bcode}
 
-\begin{resultbox}[Leaderboard on the held-out 25\% test set]
+\topic{Explainability with SHAP}
+\begin{bdef}[SHAP value]
+The amount feature $j$ pushed one prediction up or down compared with the average prediction, computed with Shapley values from cooperative game theory.
+\end{bdef}
+\begin{bmath}[Shapley value and additivity]
+$\displaystyle\phi_j=\sum_{S\subseteq F\setminus\{j\}}\frac{|S|!\,(|F|-|S|-1)!}{|F|!}\big[f(S\cup\{j\})-f(S)\big]$ \qquad $f(x)=\phi_0+\sum_j\phi_j(x)$
+\end{bmath}
+The formula averages feature $j$'s marginal contribution over every order in which features could be added. The additivity property means the contributions plus the average prediction $\phi_0$ add up exactly to the model's output, which makes SHAP explanations easy to present.
+\begin{bex}[Two features]
+The average churn score is 0.27. For one customer, the month-to-month contract adds $+0.30$ and short tenure adds $+0.12$: $0.27+0.30+0.12=0.69$.
+\end{bex}
+\figw[0.62]{s1_shap.png}{Top churn drivers by mean $|\text{SHAP}|$: month-to-month contract, short tenure, fibre-optic internet, no online security.}
+\begin{bres}[Leaderboard on the held-out 25\% test set]
 \begin{tabular}{lrr}
 \toprule
 Model & ROC-AUC & F1 (churn)\\
@@ -148,54 +387,90 @@ Logistic regression + class weight & 0.846 & 0.627\\
 Logistic regression & 0.846 & 0.607\\
 Majority-class dummy & 0.500 & 0.000\\
 \bottomrule
-\end{tabular}
-\end{resultbox}
+\end{tabular}\\[3pt]
+Twenty-five rounds of tuning bought only $+0.001$ ROC-AUC; class weighting helped F1 more. When a simple model is this close, prefer it.
+\end{bres}
+\begin{bapp}
+Explanations are needed when credit or insurance decisions must be justified to customers and regulators, and for clinical risk scores. Tools: the \texttt{shap} library, Google Vertex Explainable AI, AWS SageMaker Clarify.
+\end{bapp}
+\begin{bwarn}[SHAP is not causation]
+SHAP shows what the \emph{model} relies on, not what \emph{causes} churn. Use it to suggest actions --- a loyalty offer before month 12 --- then test them with an experiment.
+\end{bwarn}
 
-\begin{keyidea}[Honest reading of the leaderboard]
-Twenty-five rounds of tuning bought only 0.001 ROC-AUC over a plain logistic regression. Class weighting helped F1 more than tuning did. When a simple model is this close, prefer it: it is faster, easier to explain and easier to monitor.
-\end{keyidea}
+%% =====================================================================
+\hourhead{5}{BUILD}{Track experiments, publish, present}{Telco + MLflow runs}{MLflow, Git/GitHub, technical storytelling}
 
-\subsection{SHAP: explaining the model to the business}
-SHAP splits each prediction into contributions from each feature, so that $\hat f(x)=\phi_0+\sum_j\phi_j(x)$.
-\figw[0.62]{s1_shap.png}{Top churn drivers by mean $|\text{SHAP}|$: month-to-month contract, short tenure, fibre-optic internet, no online security.}
-
-\begin{pitfall}[SHAP is not causation]
-SHAP shows what the \emph{model} relies on, not what \emph{causes} churn. Use it to suggest actions (a loyalty offer before month 12), then test those actions with an experiment.
-\end{pitfall}
-
-%% ------------------------------------------------------------------
-\hourhead{5}{BUILD}{Track experiments, publish, present}{Telco + MLflow runs}{MLflow, Git/GitHub workflow, technical storytelling}
-
+\topic{Experiment tracking}
+\begin{bdef}[Experiment tracking]
+Recording, for every run, the code version, parameters, metrics and artefacts, so results can be compared and reproduced.
+\end{bdef}
+Without tracking, a week of experiments becomes a folder of notebooks nobody can explain. MLflow organises runs into \emph{experiments}; each run stores parameters, metrics and files, and the best model can be registered with a version and a stage.
+\begin{bcode}
 \begin{lstlisting}
 mlflow.set_tracking_uri("sqlite:///mlflow.db")
 mlflow.set_experiment("P1-churn-intelligence")
-with mlflow.start_run(run_name="XGBoost + class weight + Optuna"):
-    mlflow.log_param("model", "xgboost"); mlflow.log_metrics({"roc_auc": 0.847, "f1_churn": 0.632})
+with mlflow.start_run(run_name="xgb-optuna"):
+    mlflow.log_params(study.best_params)
+    mlflow.log_metrics({"roc_auc": 0.847, "f1_churn": 0.632})
+# view: mlflow ui --backend-store-uri sqlite:///mlflow.db
 \end{lstlisting}
-Open the dashboard with \texttt{mlflow ui --backend-store-uri sqlite:///mlflow.db}.
+\end{bcode}
 
-\textbf{One-page summary for a manager.} Question; data; best model and its held-out score; top three drivers; one recommendation; limits (one company, one snapshot, SHAP is not causation).
+\topic{Git workflow and storytelling}
+\begin{balgo}[Git workflow for each Sunday]
+\begin{algorithmic}[1]
+\State Commit small, meaningful changes during BUILD hours
+\State \texttt{git push origin main}
+\State \texttt{git tag -a sunday-1 -m "Sunday 1 submission"}
+\State \texttt{git push origin sunday-1}
+\State Create a GitHub Release from the tag and submit the link
+\end{algorithmic}
+\end{balgo}
+\begin{bdef}[Pyramid principle]
+Lead with the answer, then the three reasons, then the evidence. Managers read the first line; specialists read the rest.
+\end{bdef}
+\begin{bex}[One-page summary]
+\textbf{Answer:} target month-to-month customers in their first year with a retention offer.
+\textbf{Evidence:} ROC-AUC 0.847 on held-out data; top drivers are contract type, tenure and fibre internet.
+\textbf{Limits:} one company and one snapshot in time; SHAP is association, not causation.
+\end{bex}
+\begin{bres}
+Four runs logged to MLflow and ranked by ROC-AUC; the one-page summary is generated from the actual results in the notebook.
+\end{bres}
+\begin{bapp}
+MLflow, Weights \& Biases and Neptune for tracking; GitHub and GitLab for code review, releases and CI.
+\end{bapp}
 
-\begin{exercise}
+%% =====================================================================
+\section*{Formula sheet}
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+Mean / variance & $\bar x=\frac1n\sum x_i$, \; $s^2=\frac1{n-1}\sum(x_i-\bar x)^2$\\
+Linear model / MSE & $\hat y=x^\top\theta$, \; $\frac1n\lVert y-X\theta\rVert^2$, \; $\theta^\ast=(X^\top X)^{-1}X^\top y$\\
+Gradient step & $\theta\leftarrow\theta-\eta\nabla_\theta\mathcal{L}$\\
+Logistic & $p=\sigma(x^\top\theta)$, \; $\mathcal{L}=-\frac1n\sum[y\log p+(1-y)\log(1-p)]$\\
+Classification & $P=\frac{TP}{TP+FP}$, \; $R=\frac{TP}{TP+FN}$, \; $F_1=\frac{2PR}{P+R}$\\
+Regression & RMSE, MAE, \; $R^2=1-SS_{res}/SS_{tot}$\\
+SHAP & $f(x)=\phi_0+\sum_j\phi_j(x)$\\
+\bottomrule
+\end{tabularx}
+
+\section*{Check yourself}
 \begin{enumerate}
-  \item Add \texttt{tenure} buckets (0--12, 13--24, 25+ months) as a feature. Does F1 change?
-  \item Choose the probability threshold that maximises F1 on a validation split instead of using 0.5.
-  \item Estimate the business value: if a call costs Rs.\,50 and a saved customer is worth Rs.\,3,000, which threshold maximises profit?
+\item Why can a model with 73\% accuracy be useless? \emph{It never predicts the minority class, so F1 = 0.}
+\item What does $k$-fold cross-validation protect you from? \emph{Over-trusting one lucky or unlucky split.}
+\item Boosting beats linear regression by \$22k RMSE. Bias or variance reduced? \emph{Mostly bias --- the linear model is too simple.}
+\item Compute $F_1$ for $P=0.5$, $R=1.0$. \emph{$2(0.5)(1)/1.5=0.667$.}
+\item SHAP says fibre internet raises churn. Does fibre \emph{cause} churn? \emph{Not necessarily --- it is an association in the model.}
 \end{enumerate}
-\end{exercise}
+
+\section*{Glossary}
+\textbf{Feature} input column $\cdot$ \textbf{Target} value to predict $\cdot$ \textbf{Leakage} future information in inputs $\cdot$ \textbf{Pipeline} chained preprocessing and model $\cdot$ \textbf{Cross-validation} rotating train/validation folds $\cdot$ \textbf{Hyperparameter} setting chosen before training $\cdot$ \textbf{ROC-AUC} ranking quality $\cdot$ \textbf{SHAP} per-feature contribution $\cdot$ \textbf{MLflow} experiment tracker.
 
 \begin{submitbox}
-Deliverable \textbf{P1 --- Churn Intelligence}: notebook, MLflow logs, SHAP plot and one-page summary in \texttt{P1-churn-intelligence/}.\\
-\texttt{git push origin main} $\rightarrow$ \texttt{git tag -a sunday-1 -m "Sunday 1 submission"} $\rightarrow$ \texttt{git push origin sunday-1} $\rightarrow$ create a GitHub Release $\rightarrow$ submit the link.
+Deliverable \textbf{P1 --- Churn Intelligence}: notebook, MLflow logs, SHAP plot and one-page summary in \texttt{P1-churn-intelligence/}.
+\texttt{git push origin main} $\rightarrow$ \texttt{git tag -a sunday-1} $\rightarrow$ \texttt{git push origin sunday-1} $\rightarrow$ GitHub Release $\rightarrow$ submit the link.
 \end{submitbox}
 
-\section*{Checklist before you leave}
-\begin{itemize}
-  \item[$\square$] Cleaning decisions written in the README
-  \item[$\square$] Dummy baseline reported next to every model
-  \item[$\square$] Test set used once, at the end
-  \item[$\square$] SHAP drivers translated into one business action
-  \item[$\square$] Tag \texttt{sunday-1} pushed before 18:00
-\end{itemize}
-
+\input{S01_Homework}
 \end{document}

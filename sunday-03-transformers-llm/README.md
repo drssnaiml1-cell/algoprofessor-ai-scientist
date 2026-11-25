@@ -8,7 +8,8 @@
 
 | Material | File | Format |
 |---|---|---|
-| 📘 Student notes | [`notes/S03_Notes.pdf`](notes/S03_Notes.pdf) · [LaTeX source](notes/S03_Notes.tex) | PDF + LaTeX |
+| 📘 Student notes (slide-by-slide, elaborated) | [`notes/S03_Notes.pdf`](notes/S03_Notes.pdf) · [LaTeX source](notes/S03_Notes.tex) | PDF + LaTeX |
+| 🏠 Mon–Sat project homework | [`HOMEWORK.md`](HOMEWORK.md) · also the last pages of the notes PDF | Markdown + PDF |
 | 🖥️ Slides | [`slides/S03_Slides.pdf`](slides/S03_Slides.pdf) · [Beamer source](slides/S03_Slides.tex) | PDF + Beamer |
 | 💻 Notebook (with outputs) | [`notebooks/S03_Transformers_LLM_Engineering.ipynb`](notebooks/S03_Transformers_LLM_Engineering.ipynb) · [Open in Colab](https://colab.research.google.com/github/drssnaiml1-cell/algoprofessor-ai-scientist/blob/main/sunday-03-transformers-llm/notebooks/S03_Transformers_LLM_Engineering.ipynb) | Jupyter |
 | 📊 Figures | [`figures/`](figures/) | PNG |

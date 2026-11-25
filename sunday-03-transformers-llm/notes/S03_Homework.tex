@@ -1,0 +1,87 @@
+\clearpage
+\section*{Monday--Saturday Project Homework: Domain Instruction-Tuned LLM}
+\addcontentsline{toc}{section}{Monday--Saturday Project Homework}
+\begin{tcolorbox}[enhanced,colback=navy,colframe=gold,boxrule=0.8pt,arc=3pt,coltext=white,left=8pt,right=8pt,top=6pt,bottom=6pt]
+{\color{gold}\bfseries Weekly project.} Organisations want small, private models that follow their instructions well. You will adapt a real open model with LoRA, evaluate it rigorously and serve it.\\[3pt]
+{\color{gold}\bfseries Data:} databricks-dolly-15k (instructions) + a small domain corpus you choose (e.g. your university handbook)\\[3pt]
+{\color{gold}\bfseries Rhythm:} about 2--3 hours a day. Commit every day; tag \texttt{week-3} and create a GitHub Release by \textbf{Saturday 23:59 local time}. Mentors review it before the next Sunday.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Monday --- Tokenisers in practice\hfill\normalfont\small 2 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} See how tokenisation shapes cost and quality.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Train a BPE tokenizer (Hugging Face \texttt{tokenizers}, 8k vocabulary) on your domain corpus.
+  \item Compare tokens per sentence against the GPT-2 and Qwen2.5 tokenizers on 200 sentences, including Indian-language text.
+  \item Explain why token counts matter for cost and context length.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} \texttt{notebooks/01\_tokenizers.ipynb}, comparison table\\
+\textbf{\color{navy}Done when:} Tokenizer trained and saved; counts reported for all three tokenizers with examples of splits.\\
+\textbf{\color{skillC}Stretch:} Measure how many tokens a Hindi or Telugu sentence needs compared with its English translation.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Tuesday --- Scale up MiniGPT\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Turn the Sunday model into a stronger small LM.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Switch MiniGPT from characters to your BPE tokens; raise context to 256.
+  \item Add learning-rate warm-up, cosine decay and gradient clipping; train on a GPU.
+  \item Compare validation perplexity of character-level and BPE models fairly (convert to bits per character).
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} Training script, loss curves, comparison table\\
+\textbf{\color{navy}Done when:} Bits-per-character used for a fair comparison; samples shown at two temperatures.\\
+\textbf{\color{skillC}Stretch:} Add rotary position embeddings and measure the effect.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Wednesday --- LoRA / QLoRA on a real open model\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Adapt a 0.5B-parameter model on one GPU.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Load \texttt{Qwen2.5-0.5B-Instruct} (or \texttt{SmolLM2-360M-Instruct}) with \texttt{transformers}.
+  \item Fine-tune with \texttt{peft} LoRA (r = 8 and r = 32) on a 2,000-example Dolly subset, masking the prompt tokens.
+  \item Track loss, GPU memory and time; save the adapters.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} Adapters on the Hugging Face Hub (private is fine) and \texttt{reports/finetune.md}\\
+\textbf{\color{navy}Done when:} Prompt masking verified; both ranks compared on validation loss and memory.\\
+\textbf{\color{skillC}Stretch:} Run QLoRA (4-bit) and compare memory and quality.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Thursday --- A rigorous evaluation harness\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Know whether the fine-tune actually helped.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Hold out 200 Dolly items; compare base vs LoRA with an LLM-as-judge, swapping answer order to remove position bias.
+  \item Run \texttt{lm-evaluation-harness} on two tasks before and after fine-tuning to check for forgetting.
+  \item Check n-gram overlap between your training and test items (contamination).
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} \texttt{reports/evaluation.md} with win-rate, benchmark and overlap tables\\
+\textbf{\color{navy}Done when:} Order-swapped judging reported; forgetting measured; contamination check documented.\\
+\textbf{\color{skillC}Stretch:} Have two humans rate 30 answers and compare with the judge.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Friday --- Serving, structured output and throughput\hfill\normalfont\small 2--3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Run the model like a product.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Serve the merged model with vLLM or Ollama behind an OpenAI-compatible API.
+  \item Force JSON output with a schema for one task (e.g. extracting fields from a notice).
+  \item Benchmark latency and tokens/second at batch sizes 1, 4, 16 and 32.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} Serving config, JSON-schema demo, benchmark table\\
+\textbf{\color{navy}Done when:} Invalid JSON rate measured; throughput curve plotted; hardware stated.\\
+\textbf{\color{skillC}Stretch:} Compare 4-bit and 16-bit serving speed and quality.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Saturday --- Chat UI, report and model card\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Package and present.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Build a small chat UI (Gradio) that calls your served model.
+  \item Write \texttt{MODEL\_CARD.md} including evaluation, known failure cases and safety notes.
+  \item Record a 5-minute demo; push, tag \texttt{week-3}, create a Release.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} UI, model card, demo link, Release \texttt{week-3}\\
+\textbf{\color{navy}Done when:} Model card lists at least 5 tested failure cases with examples.\\
+\textbf{\color{skillC}Stretch:} Add a refusal policy for out-of-domain questions and test it.
+\end{tcolorbox}
+

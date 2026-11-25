@@ -8,7 +8,8 @@
 
 | Material | File | Format |
 |---|---|---|
-| 📘 Student notes | [`notes/S04_Notes.pdf`](notes/S04_Notes.pdf) · [LaTeX source](notes/S04_Notes.tex) | PDF + LaTeX |
+| 📘 Student notes (slide-by-slide, elaborated) | [`notes/S04_Notes.pdf`](notes/S04_Notes.pdf) · [LaTeX source](notes/S04_Notes.tex) | PDF + LaTeX |
+| 🏠 Mon–Sat project homework | [`HOMEWORK.md`](HOMEWORK.md) · also the last pages of the notes PDF | Markdown + PDF |
 | 🖥️ Slides | [`slides/S04_Slides.pdf`](slides/S04_Slides.pdf) · [Beamer source](slides/S04_Slides.tex) | PDF + Beamer |
 | 💻 Notebook (with outputs) | [`notebooks/S04_Retrieval_RAG.ipynb`](notebooks/S04_Retrieval_RAG.ipynb) · [Open in Colab](https://colab.research.google.com/github/drssnaiml1-cell/algoprofessor-ai-scientist/blob/main/sunday-04-retrieval-rag/notebooks/S04_Retrieval_RAG.ipynb) | Jupyter |
 | 📊 Figures | [`figures/`](figures/) | PNG |

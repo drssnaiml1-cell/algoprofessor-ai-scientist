@@ -1,0 +1,87 @@
+\clearpage
+\section*{Monday--Saturday Project Homework: Research Analyst Agent}
+\addcontentsline{toc}{section}{Monday--Saturday Project Homework}
+\begin{tcolorbox}[enhanced,colback=navy,colframe=gold,boxrule=0.8pt,arc=3pt,coltext=white,left=8pt,right=8pt,top=6pt,bottom=6pt]
+{\color{gold}\bfseries Weekly project.} Analysts spend hours searching, reading and summarising. You will build an agent that does this with real tools, cites everything, stays inside safe limits and is measured honestly.\\[3pt]
+{\color{gold}\bfseries Data:} Live arXiv API and web pages; GSM8K and a 30-task agent test suite you write\\[3pt]
+{\color{gold}\bfseries Rhythm:} about 2--3 hours a day. Commit every day; tag \texttt{week-5} and create a GitHub Release by \textbf{Saturday 23:59 local time}. Mentors review it before the next Sunday.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Monday --- A tested tool layer\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Give the agent reliable hands.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Implement 5 tools with JSON schemas: arXiv search, web page fetch (allow-listed domains), safe calculator, Python sandbox, notes store.
+  \item Add timeouts, retries with exponential backoff and rate limiting to network tools.
+  \item Write unit tests for every tool, including failure cases.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} \texttt{src/tools/}, \texttt{tests/test\_tools.py}\\
+\textbf{\color{navy}Done when:} All tools validated against their schemas; tests cover timeouts and bad inputs.\\
+\textbf{\color{skillC}Stretch:} Cache API results to disk to save cost and time.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Tuesday --- A ReAct agent on a real LLM\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Replace the rule-based policy with a real model.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Use an LLM with native function calling (any provider or a local model via Ollama).
+  \item Implement the ReAct loop with a step limit and structured logging.
+  \item Add tracing with Langfuse or LangSmith; inspect 5 traces and note one improvement each.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} \texttt{src/agent.py}, trace screenshots in \texttt{reports/traces.md}\\
+\textbf{\color{navy}Done when:} Every run traced; step limit enforced; tool errors returned to the model instead of crashing.\\
+\textbf{\color{skillC}Stretch:} Stream partial results to the console.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Wednesday --- Planner--executor--critic with memory\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Make the agent check its own work.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Rebuild the agent as a LangGraph graph: planner, executor, critic, with a revise loop limited to 2 rounds.
+  \item Add long-term memory (notes store) so the agent reuses earlier findings.
+  \item Compare answers with and without the critic on 10 tasks.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} \texttt{src/graph.py}, comparison table\\
+\textbf{\color{navy}Done when:} Critic catches at least one real error in the comparison or you explain why not.\\
+\textbf{\color{skillC}Stretch:} Let the critic check every citation against the fetched text.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Thursday --- Expose tools via MCP and review security\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Make tools reusable and safe.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Write an MCP server exposing your tools with the official \texttt{mcp} SDK; connect it to an MCP client.
+  \item Threat-model the agent: prompt injection in fetched pages, data exfiltration, runaway loops, cost blow-ups.
+  \item Add mitigations: allow-lists, human approval for write actions, cost caps.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} \texttt{mcp\_server.py}, \texttt{docs/security.md}\\
+\textbf{\color{navy}Done when:} At least 5 threats with a mitigation and a test each.\\
+\textbf{\color{skillC}Stretch:} Add an approval prompt in the client for any write or send action.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Friday --- A 30-task evaluation suite\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Measure success, cost and failure modes.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Write 30 tasks with checkable answers (literature questions, calculations, multi-hop lookups, 5 unanswerable).
+  \item Run the agent 3 times per task; report success rate $\pm$ standard error, mean steps, cost per task.
+  \item Build a failure taxonomy and fix the most common failure; re-run.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} \texttt{evals/tasks.jsonl}, \texttt{reports/agent\_eval.md}\\
+\textbf{\color{navy}Done when:} Before/after numbers for the fix; unanswerable tasks scored on refusal.\\
+\textbf{\color{skillC}Stretch:} Compare two different LLMs on the same suite.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Saturday --- Analyst report demo\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Deliver a real piece of research.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Use the agent to produce a cited 2-page literature brief on a topic you choose.
+  \item Verify every citation by hand; record how many the agent got right.
+  \item Record a 5-minute demo; push, tag \texttt{week-5}, create a Release.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} Brief (PDF), demo link, Release \texttt{week-5}\\
+\textbf{\color{navy}Done when:} Every citation checked; citation accuracy reported honestly.\\
+\textbf{\color{skillC}Stretch:} Publish the brief as a GitHub Pages page.
+\end{tcolorbox}
+

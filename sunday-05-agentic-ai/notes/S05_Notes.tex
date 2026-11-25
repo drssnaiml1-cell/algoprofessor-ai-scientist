@@ -3,134 +3,233 @@
 \setsunday{5}
 \begin{document}
 
-\notestitle{Agentic AI Systems}{21--25}{Build agents that plan, call tools, check their own work and stay inside safe limits --- then measure them like any other system. Project \textbf{P5 --- ScholarAgent}.}
+\notestitle{Agentic AI Systems}{21--25}{Understand what makes an LLM an agent, build tool calling and the ReAct loop from scratch, add verification, memory and a sandbox, keep a human in the loop for risky actions, and measure agents honestly --- project \textbf{P5 --- ScholarAgent}.}
+
+\section*{How to use these notes}
+These notes follow the Sunday 5 slides topic by topic and explain each step in full, using the same colour code:
+\legendbox
+Numbers in \emph{Our notebook result} boxes come from \texttt{notebooks/S05\_Agentic\_AI\_Systems.ipynb}. The agent runs offline with a rule-based planner so every result is reproducible; in class you swap in a real LLM through the same interface. The last section is your \textbf{Monday--Saturday project homework}.
 
 \begin{tabularx}{\linewidth}{@{}c c X l@{}}
 \toprule
 \textbf{Hour} & \textbf{Mode} & \textbf{Focus} & \textbf{Dataset}\\
 \midrule
-21 & \teachtag & Tool use, function calling, ReAct, MCP & \ds{Syllabus multi-hop questions}\\
-22 & \teachtag & Planner $\rightarrow$ executor $\rightarrow$ critic graph, memory, guardrails & \ds{GSM8K (1,319)}\\
-23 & \buildtag & ScholarAgent: search papers, write a cited summary & \ds{arXiv API / offline index}\\
-24 & \buildtag & Sandboxed code-execution agent & \ds{UCI Adult}\\
-25 & \buildtag & Evaluation \& observability: traces, cost, failures, approval & \ds{12-task suite}\\
+21 & \teachtag & Agents, tool calling, function schemas & \ds{Course facts + tools}\\
+22 & \teachtag & ReAct, planning, verification of reasoning & \ds{GSM8K (1,319 test)}\\
+23 & \buildtag & ScholarAgent: research tools and memory & \ds{arXiv-style index}\\
+24 & \buildtag & Code sandbox, safety, human approval & \ds{Housing regression jobs}\\
+25 & \buildtag & Evaluating agents: success, cost, failure modes & \ds{12-task suite}\\
 \bottomrule
 \end{tabularx}
 
-\medskip
-Companion notebook: \texttt{notebooks/S05\_Agentic\_AI\_Systems.ipynb}. So that it runs anywhere without an API key, the agent's decisions come from a small rule-based policy (\texttt{MockLLM}). Tool schemas, the ReAct loop, the graph, guardrails, sandbox, tracing and evaluation are all real. In class, set \texttt{ANTHROPIC\_API\_KEY} or \texttt{OPENAI\_API\_KEY} and swap in a real model.
+\begin{bdef}[Learning objectives]
+By the end of today you can (1) define an agent and its loop; (2) write tool schemas and dispatch tool calls safely; (3) implement ReAct and a step verifier; (4) give an agent memory and research tools; (5) sandbox code and require approval for risky actions; (6) evaluate agents on success, steps, cost and failure types.\\[2pt]
+\textbf{Prerequisites:} Sunday 3 (LLMs, structured output) and Sunday 4 (retrieval, citations).
+\end{bdef}
 
-%% ------------------------------------------------------------------
-\hourhead{21}{TEACH}{Tool use, function calling and the ReAct loop}{Multi-hop questions over the course syllabus PDF}{Function calling, ReAct prompting, MCP tools}
+%% =====================================================================
+\hourhead{21}{TEACH}{Agents and tool calling}{Course facts + calculator, currency and lookup tools}{Function schemas, JSON tool calls, dispatch}
 
-\begin{defbox}[Function calling]
-The model never runs code. It outputs a structured request such as \texttt{\{"tool": "lookup\_hour", "args": \{"hour": 6\}\}}. Your program checks it, runs the tool, and returns the result as an \emph{observation}.
-\end{defbox}
-
-\begin{center}
-\begin{tikzpicture}[node distance=0.5cm and 1.0cm, every node/.style={font=\small}]
-\node[draw=sun,fill=sun!10,rounded corners,minimum width=2.3cm,minimum height=0.8cm] (r) {Reason};
-\node[draw=gold,fill=goldlight,rounded corners,minimum width=2.3cm,minimum height=0.8cm,right=of r] (a) {Act (call a tool)};
-\node[draw=dataC,fill=dataC!10,rounded corners,minimum width=2.3cm,minimum height=0.8cm,right=of a] (o) {Observe};
-\node[draw=navy,fill=navy,text=white,rounded corners,minimum width=2.3cm,minimum height=0.8cm,right=of o] (f) {Final answer};
-\draw[-{Stealth},thick,navy] (r) -- (a); \draw[-{Stealth},thick,navy] (a) -- (o);
-\draw[-{Stealth},thick,navy] (o.south) -- ++(0,-0.45) -| (r.south) node[pos=0.25,below,font=\scriptsize]{repeat (step limit)};
-\draw[-{Stealth},thick,gold] (o) -- (f);
-\end{tikzpicture}
-\captionof{figure}{The ReAct loop: Reason $\rightarrow$ Act $\rightarrow$ Observe, until the agent can answer or hits its step limit.}
-\end{center}
-
-\textbf{Three tools:} \texttt{search} (BM25 over the syllabus), \texttt{lookup\_hour} (a structured ``database'' lookup of one course hour) and a \textbf{safe calculator} that parses arithmetic only.
-
-\begin{resultbox}
-Question: ``Which Sunday has the project called LeafDoctor, and which dataset does it use in hour 1?''\\
-Step 1 \texttt{search("Deliverable leafdoctor")} $\rightarrow$ page 5: LeafDoctor is Sunday 2.\\
-Step 2 \texttt{lookup\_hour(6)} $\rightarrow$ ``Tensors, autograd \ldots Fashion-MNIST (70,000 images, 10 classes)''.\\
-Fee conversion: \texttt{search} finds INR 50,000; \texttt{calculator("50000/83.5")} $\rightarrow$ about US\$\,599.\\
-Guardrail: \texttt{calculator("\_\_import\_\_('os').system(...)")} $\rightarrow$ blocked (``disallowed expression element: Call'').
-\end{resultbox}
-
-\begin{keyidea}[Give agents structured tools]
-Our first version answered the two-hop question with free-text search for both hops and retrieved the wrong page. A purpose-built \texttt{lookup\_hour} tool fixed it. Exact facts belong in structured tools; search is for open questions.
-\end{keyidea}
-
-\textbf{MCP (Model Context Protocol)} standardises how tools are advertised and called, so any MCP client can use your tools. The notebook exports the tool registry as an MCP-style manifest (name, description, JSON input schema); with the \texttt{mcp} SDK a server is a few lines (\texttt{@mcp.tool()} on each function).
-
-%% ------------------------------------------------------------------
-\hourhead{22}{TEACH}{Multi-agent graph: planner, executor, critic}{GSM8K test set (1,319 maths word problems)}{LangGraph-style state machines, self-critique, agent memory, guardrails}
-
-GSM8K reference solutions mark every calculation, e.g.\ \texttt{<<16-3-4=9>>}. Our agent team checks each reasoning trace:
-\begin{enumerate}
-  \item \textbf{Planner} extracts the calculation steps.
-  \item \textbf{Executor} recomputes each step with the calculator tool.
-  \item \textbf{Critic} compares with the claimed values and the final answer, then decides \emph{accept} or \emph{flag}.
-\end{enumerate}
+\topic{From chatbot to agent}
+\begin{bdef}[Agent]
+A system in which a language model repeatedly chooses an action --- call a tool, ask a question, or give a final answer --- observes the result, and continues until the goal is reached.
+\end{bdef}
+A chatbot produces one reply. An agent \emph{acts}: it can look things up, calculate, run code and change things in the world. That makes it far more useful and far riskier, so the engineering is mostly about control --- what tools exist, what they may do, and how we check the results.
+\begin{bmath}[The agent loop as a policy]
+At step $t$ with history $h_t$: $\;a_t\sim\pi_\theta(a\mid h_t)$, \;$o_t=\mathrm{env}(a_t)$, \;$h_{t+1}=h_t\oplus(a_t,o_t)$, \;stop when $a_t=\textsc{finish}$ or $t=T_{max}$.
+\end{bmath}
+\begin{bdef}[Tool / function calling]
+The model outputs a structured call --- a tool name and JSON arguments matching a schema. Your code validates and runs it, then returns the result to the model.
+\end{bdef}
+\begin{bcode}[A tool schema]
 \begin{lstlisting}
-g = Graph()
-g.add_node("planner", planner); g.add_node("executor", executor); g.add_node("critic", critic)
-g.add_edge("planner", lambda s: "executor" if s["plan"] else "END")
-g.add_edge("executor", lambda s: "critic"); g.add_edge("critic", lambda s: "END")
+{"name": "convert_currency",
+ "description": "Convert an amount between currencies at a fixed reference rate",
+ "parameters": {"type": "object",
+   "properties": {"amount": {"type": "number"}, "from": {"type": "string"}, "to": {"type": "string"}},
+   "required": ["amount", "from", "to"]}}
 \end{lstlisting}
+\end{bcode}
+\begin{balgo}[Safe dispatch]
+\begin{algorithmic}[1]
+\State parse the model output as JSON
+\If{tool name not in the registry} \State \Return error to the model \EndIf
+\State validate the arguments against the schema
+\State run the tool with a timeout; catch exceptions
+\State \Return the result (or error text) as the next observation
+\end{algorithmic}
+\end{balgo}
+\begin{bres}
+``What is the India fee in US dollars?'' $\rightarrow$ \texttt{lookup\_hour}/fee lookup (INR 50,000) $\rightarrow$ \texttt{convert\_currency} $\rightarrow$ about \textbf{US\$599}. The agent used facts from a tool instead of guessing them.
+\end{bres}
+\begin{bwarn}[Never \texttt{eval} model output]
+Arguments come from a model that can be manipulated by text it reads (prompt injection). Validate types, ranges and allowed values before any tool runs.
+\end{bwarn}
+\begin{bapp}
+OpenAI, Anthropic and Google APIs all support tool calling; the Model Context Protocol (MCP) standardises how tools are exposed to agents, from IDE assistants to Claude and ChatGPT connectors.
+\end{bapp}
 
-\begin{resultbox}
-1,319 traces: \textbf{1,301 accepted}, 18 had no calculations to check, 0 flagged. Mean 3.25 calculation steps per problem. In 92.9\% of traces the final answer equals the last computed value.
-\end{resultbox}
+%% =====================================================================
+\hourhead{22}{TEACH}{ReAct, planning and verifying reasoning}{GSM8K --- 1,319 grade-school maths problems}{ReAct, chain-of-thought, critics}
 
-\begin{pitfall}[Most first-run ``failures'' are interface mismatches]
-The first version flagged 6 traces. Every one was \emph{format noise} --- a unary \texttt{+8}, a fraction written \texttt{3/4} --- not a maths error. Inspect flagged cases before trusting a failure rate.
-\end{pitfall}
+\topic{ReAct}
+\begin{bdef}[ReAct]
+Interleave \emph{Reasoning} (a short thought about what to do next) with \emph{Acting} (a tool call), and feed each observation back in. Thoughts make the plan inspectable; actions ground it in real results.
+\end{bdef}
+\begin{balgo}[ReAct loop]
+\begin{algorithmic}[1]
+\State $h\gets$ task
+\For{$t=1$ to $T_{max}$}
+  \State Thought $\gets$ LLM($h$); Action $\gets$ LLM($h$, Thought)
+  \If{Action is \textsc{finish}} \State \Return answer \EndIf
+  \State Observation $\gets$ run(Action); append (Thought, Action, Observation) to $h$
+\EndFor
+\State \Return ``step limit reached''
+\end{algorithmic}
+\end{balgo}
+\begin{bex}[Trace]
+\emph{Thought:} I need the fee in dollars. \emph{Action:} \texttt{lookup("fee India")} \emph{Obs:} INR 50,000. \emph{Action:} \texttt{convert(50000,"INR","USD")} \emph{Obs:} 599. \emph{Finish:} about US\$599.
+\end{bex}
 
-\textbf{Guardrails so far:} arithmetic-only calculator $\cdot$ step limit in ReAct $\cdot$ hop limit in the graph $\cdot$ every decision stored in memory for audit.
+\topic{Verifying reasoning}
+\begin{bdef}[Critic / verifier]
+A separate check that inspects each step --- re-computing arithmetic, checking units or format --- and flags or rejects steps that do not hold.
+\end{bdef}
+\begin{bmath}[Step check]
+For a step ``$a\circ b=c$'', accept if $|\mathrm{eval}(a\circ b)-c|\le\epsilon$; a trace is accepted if every step passes and the final answer equals the last computed value.
+\end{bmath}
+\begin{bres}[GSM8K reference solutions through our critic]
+1,319 traces: \textbf{1,301 accepted}, 18 with no computable plan, 0 flagged. 3.25 steps per trace on average; the final answer equals the last computed step in 92.9\% of traces.
+\end{bres}
+\begin{bwarn}[Check your checker]
+The first critic run flagged 6 correct traces --- all format noise such as ``+8'' and ``3/4''. A verifier that cries wolf is ignored; test it on known-good data first.
+\end{bwarn}
+\begin{bapp}
+Code agents run tests as their critic; maths and data agents re-compute; OpenAI's o-series and similar reasoning models are trained with verifiable rewards on problems like GSM8K.
+\end{bapp}
 
-%% ------------------------------------------------------------------
-\hourhead{23}{BUILD}{ScholarAgent: an AI research-scientist agent}{arXiv API (live in class) / offline index of this course's papers}{API tool integration, rate limits, citation tracking}
+%% =====================================================================
+\hourhead{23}{BUILD}{ScholarAgent: research tools and memory}{Offline arXiv-style paper index}{Search tools, memory, citation discipline}
 
+\topic{Tools and memory}
+\begin{bdef}[Agent memory]
+\textbf{Short-term:} the conversation history in the prompt. \textbf{Long-term:} facts stored outside the model (a vector store or database) and retrieved when relevant --- Sunday 4's retrieval applied to the agent's own notes.
+\end{bdef}
+\begin{balgo}[ScholarAgent]
+\begin{algorithmic}[1]
+\State search the paper index for the question
+\State keep results above a relevance threshold
+\State read the best paper's abstract; extract authors, year, ID
+\State store the finding in memory with its source
+\State answer with a citation, or say none was found
+\end{algorithmic}
+\end{balgo}
+\begin{bcode}
+\begin{lstlisting}
+TOOLS = {"search_papers": search_papers, "read_abstract": read_abstract,
+         "remember": memory.add, "recall": memory.search}
+hits = [h for h in search_papers(q, k=5) if h["score"] >= MIN_REL]   # relevance filter
+\end{lstlisting}
+\end{bcode}
+\begin{bres}
+``Which paper introduced low-rank adaptation?'' $\rightarrow$ \textbf{LoRA, Hu et al.\ 2021, arXiv:2106.09685}, with the source stored in memory and cited in the answer.
+\end{bres}
+\begin{bwarn}[Hallucinated citations]
+LLMs invent plausible paper titles. Only cite IDs that a tool actually returned, and keep the tool output next to the answer.
+\end{bwarn}
+
+%% =====================================================================
+\hourhead{24}{BUILD}{Code sandbox, safety and human approval}{California-housing regression jobs}{Sandboxing, allow-lists, human-in-the-loop}
+
+\topic{Running code safely}
+\begin{bdef}[Sandbox]
+An isolated environment for model-written code: no network, no file system outside a scratch folder, limited time and memory, only allow-listed imports.
+\end{bdef}
+\begin{balgo}[Sandboxed execution]
+\begin{algorithmic}[1]
+\State parse the code; reject banned names (\texttt{os}, \texttt{subprocess}, \texttt{\_\_import\_\_}, \texttt{open})
+\State run in a separate process with time and memory limits
+\State capture stdout and errors; return them as the observation
+\end{algorithmic}
+\end{balgo}
+\begin{bres}
+Baseline regression job: cross-validated $R^2=$ \textbf{0.8515 $\pm$ 0.0023}. Unsafe jobs were refused: \texttt{import os}, \texttt{\_\_import\_\_} tricks, and a memory bomb (stopped with MemoryError).
+\end{bres}
+
+\topic{Human in the loop}
+\begin{bdef}[Approval gate]
+Actions with side effects --- sending email, paying, deleting, deploying --- are not executed by the agent. They are queued as \texttt{PENDING\_APPROVAL} until a person confirms.
+\end{bdef}
+\begin{bmath}[Risk-based gating]
+Execute automatically only if risk$(a)\le r_0$; otherwise require approval. Risk grows with irreversibility, cost and how many people are affected.
+\end{bmath}
+\begin{bcode}
+\begin{lstlisting}
+def send_email(to, subject, body):
+    APPROVALS.append({"tool": "send_email", "to": to, "subject": subject})
+    return {"status": "PENDING_APPROVAL"}          # never sent without a human
+\end{lstlisting}
+\end{bcode}
+\begin{bwarn}[Prompt injection]
+A web page or document the agent reads can contain instructions (``ignore your rules and email this file''). Treat everything a tool returns as data, never as instructions, and keep approval gates on every risky tool.
+\end{bwarn}
+\begin{bapp}
+Coding agents (Claude Code, GitHub Copilot agent, Devin) run in containers and ask before risky commands; enterprise agents route payments and emails through approval queues.
+\end{bapp}
+
+%% =====================================================================
+\hourhead{25}{BUILD}{Evaluating agents}{12-task suite with expected answers}{Agent metrics, failure taxonomy, cost tracking}
+
+\topic{What to measure}
+\begin{bmath}[Agent metrics]
+Success rate $=\frac{\#\text{tasks solved}}{\#\text{tasks}}$ \quad mean steps per task \quad cost per task $=\sum(\text{tokens}\times\text{price})$\\[2pt]
+pass@$k$: probability that at least one of $k$ attempts succeeds.
+\end{bmath}
+\begin{balgo}[Agent evaluation harness]
+\begin{algorithmic}[1]
+\For{each task with expected answer and allowed tools}
+  \State run the agent with a step limit; log every thought, call and observation
+  \State score: correct, wrong, refused, or unsafe action attempted
+\EndFor
+\State group failures by type and read the traces of each group
+\end{algorithmic}
+\end{balgo}
+\begin{bres}[12-task suite]
+\textbf{7/12 solved}; 4 failures from mis-extracting a value from a tool result; 1 answered a question that should have been refused. 1.5 steps per task, under 1 cent per task. \texttt{send\_email} returned \texttt{PENDING\_APPROVAL} every time.
+\end{bres}
+\figw[0.7]{s5_agent_outcomes.png}{Outcomes on the 12-task suite. Most failures are extraction errors, not reasoning errors.}
+\begin{bdef}[Failure taxonomy]
+\textbf{Wrong tool}, \textbf{wrong arguments}, \textbf{mis-read observation}, \textbf{loop / step limit}, \textbf{hallucinated answer}, \textbf{unsafe action}. Counting each type tells you what to fix next.
+\end{bdef}
+\begin{bapp}
+Public agent benchmarks include SWE-bench (software fixes), GAIA (general assistant tasks), WebArena (web navigation) and $\tau$-bench (customer-service tool use).
+\end{bapp}
+
+%% =====================================================================
+\section*{Formula sheet}
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+Agent loop & $a_t\sim\pi(a\mid h_t)$, $o_t=\mathrm{env}(a_t)$, $h_{t+1}=h_t\oplus(a_t,o_t)$\\
+Step check & $|\mathrm{eval}(a\circ b)-c|\le\epsilon$\\
+Gating & auto only if risk $\le r_0$\\
+Success, cost & solved / tasks; \; $\sum$ tokens $\times$ price\\
+\bottomrule
+\end{tabularx}
+
+\section*{Check yourself}
 \begin{enumerate}
-  \item \textbf{Search:} call the arXiv API; if the network fails, fall back to an offline index and \emph{say so} in the output.
-  \item \textbf{Filter:} keep only clearly relevant papers (score at least half the best score).
-  \item \textbf{Write:} a numbered list with title, authors, year and identifier, then a synthesis where every claim cites $[n]$.
+\item Why validate tool arguments even when the model wrote valid JSON? \emph{Valid JSON can still hold out-of-range or injected values.}
+\item What did the 6 false flags in the first critic run teach us? \emph{Test the verifier on known-good data before trusting it.}
+\item Which ScholarAgent tools need an approval gate? \emph{None of the read-only ones; any tool that sends, pays, deletes or deploys does.}
+\item 4 of 5 failures were extraction errors. What do you fix first? \emph{Structured tool outputs and the extraction step, not the planner.}
 \end{enumerate}
-\begin{resultbox}
-Query ``efficient fine-tuning of large language models with low rank adaptation'' (offline index) $\rightarrow$ 1 paper: \emph{LoRA: Low-Rank Adaptation of Large Language Models}, Hu et al.\ (2021), arXiv:2106.09685. The first version, without the relevance filter, also listed an unrelated vector-search paper.
-\end{resultbox}
-\begin{pitfall}[Never cite what you did not retrieve]
-An agent that ``remembers'' papers can invent titles and authors. ScholarAgent only cites what the search tool returned, and stops rather than guessing when nothing is found.
-\end{pitfall}
 
-%% ------------------------------------------------------------------
-\hourhead{24}{BUILD}{Sandboxed code-execution agent}{UCI Adult (baseline reproduction)}{Sandboxing, permission boundaries, reproducibility}
-
-\textbf{Defence in depth:} (1) a static check refuses OS, network and dynamic-execution calls; (2) the code runs in a separate, isolated Python process (\texttt{-I}) with a 2\,GB memory cap, a time limit and an empty environment.
-\begin{resultbox}
-Agent-written job: \textbf{logistic-regression baseline on UCI Adult, 5-fold accuracy 0.8515 $\pm$ 0.0023}.\\
-Unsafe jobs: \texttt{import os} $\rightarrow$ refused; \texttt{\_\_import\_\_('socket')} $\rightarrow$ refused; a 10-billion-element list $\rightarrow$ stopped by the memory limit.
-\end{resultbox}
-In production, run jobs in a container with no network (\texttt{docker run --network none --memory 2g --cpus 1}) or a managed sandbox. Never execute model-written code in your own process.
-
-%% ------------------------------------------------------------------
-\hourhead{25}{BUILD}{Agent evaluation and observability}{12-task agent test suite (GAIA validation in class)}{Agent evals, tracing, cost control, human-in-the-loop}
-
-For every task the harness records steps, tool calls, latency, estimated tokens and cost, and classifies the outcome.
-\begin{resultbox}[12-task suite]
-Success \textbf{7/12 (58\%)} $\cdot$ retrieved the right passage but extracted the wrong words 4 $\cdot$ answered an unanswerable question 1 $\cdot$ mean 1.5 steps per task $\cdot$ estimated total cost under one US cent.\\
-Human approval: \texttt{send\_email} returns \texttt{PENDING\_APPROVAL} until a person approves it.
-\end{resultbox}
-\figw[0.62]{s5_agent_outcomes.png}{Outcome taxonomy for the agent test suite.}
-
-\begin{keyidea}[What to report for any agent]
-Task success on a fixed suite; steps and tool calls per task; latency; cost per task; a failure taxonomy; and which actions needed human approval. Trace every call (Langfuse or LangSmith in class). Your first improvement ticket: add Sunday 4's coverage-based abstention as a guardrail, so the agent refuses the hostel-fee question.
-\end{keyidea}
-
-\begin{exercise}
-\begin{enumerate}
-  \item Add the abstention guardrail and re-run the suite. Which outcome category disappears?
-  \item Replace \texttt{MockLLM} with a real model and compare success, steps and cost.
-  \item Add a tool that requires approval (e.g.\ \texttt{post\_to\_slack}) and test that the agent stops.
-\end{enumerate}
-\end{exercise}
+\section*{Glossary}
+\textbf{Agent} LLM in an action loop $\cdot$ \textbf{Tool call} structured function request $\cdot$ \textbf{ReAct} reason + act $\cdot$ \textbf{Critic} step verifier $\cdot$ \textbf{Sandbox} isolated execution $\cdot$ \textbf{HITL} human in the loop $\cdot$ \textbf{Prompt injection} instructions hidden in data $\cdot$ \textbf{MCP} Model Context Protocol.
 
 \begin{submitbox}
-Deliverable \textbf{P5 --- ScholarAgent}: notebook, tools module, agent test suite with results table, and a trace log in \texttt{P5-scholaragent/}. Tag \texttt{sunday-5}, create a Release, submit the link.
+Deliverable \textbf{P5 --- ScholarAgent}: notebook, tool registry, sandbox, approval log and the 12-task evaluation with traces in \texttt{P5-scholaragent/}. Tag \texttt{sunday-5}, create a Release, submit the link.
 \end{submitbox}
 
+\input{S05_Homework}
 \end{document}

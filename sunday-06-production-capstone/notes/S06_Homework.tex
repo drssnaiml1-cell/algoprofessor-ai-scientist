@@ -1,0 +1,87 @@
+\clearpage
+\section*{Monday--Saturday Project Homework: Ship Your Capstone to Production}
+\addcontentsline{toc}{section}{Monday--Saturday Project Homework}
+\begin{tcolorbox}[enhanced,colback=navy,colframe=gold,boxrule=0.8pt,arc=3pt,coltext=white,left=8pt,right=8pt,top=6pt,bottom=6pt]
+{\color{gold}\bfseries Weekly project.} A portfolio project that is deployed, monitored, audited and pitched is what convinces employers and investors. This week turns your best project into that.\\[3pt]
+{\color{gold}\bfseries Data:} Your capstone data (from P1--P5), plus a simulated 'next month' batch for drift\\[3pt]
+{\color{gold}\bfseries Rhythm:} about 2--3 hours a day. Commit every day; tag \texttt{week-6} and create a GitHub Release by \textbf{Saturday 23:59 local time}. Mentors review it before the next Sunday.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Monday --- Tests, container and CI\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Make every change safe.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Reach at least 80\% test coverage on your service (\texttt{pytest --cov}).
+  \item Write a production Dockerfile (slim base, non-root user, health check).
+  \item Add a GitHub Actions workflow: lint, test, build the image on every push; add the CI badge to the README.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} Tests, \texttt{Dockerfile}, \texttt{.github/workflows/ci.yml}\\
+\textbf{\color{navy}Done when:} CI green on main; coverage report attached.\\
+\textbf{\color{skillC}Stretch:} Add a vulnerability scan of the image (e.g. Trivy).
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Tuesday --- Cloud deployment\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Put it on the internet properly.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Deploy to a free or low-cost platform (Hugging Face Spaces, Render, Railway, or a cloud VM).
+  \item Manage secrets with environment variables or the platform's secret store --- never in Git.
+  \item Add \texttt{/health}, request logging and a simple uptime check.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} Live URL, deployment notes in \texttt{docs/deploy.md}\\
+\textbf{\color{navy}Done when:} A stranger can use the live URL; no secret appears in the repository history.\\
+\textbf{\color{skillC}Stretch:} Add a staging environment and promote to production from a tag.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Wednesday --- Monitoring, drift and retraining\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Notice when the world changes.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Create a 'next month' batch with a realistic shift (e.g. new customer mix).
+  \item Produce an Evidently drift report; define an alert rule (e.g. PSI $>$ 0.25 on any top-5 feature).
+  \item Write a retraining script that registers a new model version and compares it with the current one.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} Drift report, alert rule, \texttt{scripts/retrain.py}\\
+\textbf{\color{navy}Done when:} Alert fires on the shifted batch; new version only promoted if it beats the old one.\\
+\textbf{\color{skillC}Stretch:} Schedule the drift check with GitHub Actions cron.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Thursday --- Fairness, red-team and compliance audit\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Earn trust before launch.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Measure fairness metrics for relevant groups; try one mitigation; report the trade-off.
+  \item Run a red-team session with 20 probes across at least 5 risk categories; log severity and fixes.
+  \item Fill an EU AI Act risk-tier and India DPDP Act checklist for your system.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} \texttt{docs/audit.md}\\
+\textbf{\color{navy}Done when:} Numbers for every claim; each high-severity finding has a fix or an explicit acceptance.\\
+\textbf{\color{skillC}Stretch:} Ask another team to red-team your system and include their findings.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Friday --- Pitch and interview rehearsal\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Practise the conversation that gets you hired or funded.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Build the 7-minute Demo Day deck from your real results.
+  \item Record a full rehearsal; cut anything over time.
+  \item Do a 45-minute mock interview with a peer: one system-design question about your capstone and two STAR behavioural questions.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} Deck (PDF), rehearsal recording link, interview feedback notes\\
+\textbf{\color{navy}Done when:} Pitch within 7 minutes; every number on slides traceable to your repository.\\
+\textbf{\color{skillC}Stretch:} Pitch to someone outside tech and note what confused them.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Saturday --- Final release and portfolio\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Finish strong.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Tag \texttt{v1.0} and create a Release with notes, model card and audit attached.
+  \item Polish your portfolio README so it links all six projects with one-line results each.
+  \item Write a LinkedIn post about your capstone; complete the certification checklist.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} Release \texttt{v1.0}, portfolio README, post link\\
+\textbf{\color{navy}Done when:} All six projects linked with working demos or clear run instructions.\\
+\textbf{\color{skillC}Stretch:} Write a technical blog post on your hardest bug and how you found it.
+\end{tcolorbox}
+

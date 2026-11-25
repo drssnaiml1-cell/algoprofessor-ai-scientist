@@ -8,7 +8,8 @@
 
 | Material | File | Format |
 |---|---|---|
-| 📘 Student notes | [`notes/S05_Notes.pdf`](notes/S05_Notes.pdf) · [LaTeX source](notes/S05_Notes.tex) | PDF + LaTeX |
+| 📘 Student notes (slide-by-slide, elaborated) | [`notes/S05_Notes.pdf`](notes/S05_Notes.pdf) · [LaTeX source](notes/S05_Notes.tex) | PDF + LaTeX |
+| 🏠 Mon–Sat project homework | [`HOMEWORK.md`](HOMEWORK.md) · also the last pages of the notes PDF | Markdown + PDF |
 | 🖥️ Slides | [`slides/S05_Slides.pdf`](slides/S05_Slides.pdf) · [Beamer source](slides/S05_Slides.tex) | PDF + Beamer |
 | 💻 Notebook (with outputs) | [`notebooks/S05_Agentic_AI_Systems.ipynb`](notebooks/S05_Agentic_AI_Systems.ipynb) · [Open in Colab](https://colab.research.google.com/github/drssnaiml1-cell/algoprofessor-ai-scientist/blob/main/sunday-05-agentic-ai/notebooks/S05_Agentic_AI_Systems.ipynb) | Jupyter |
 | 📊 Figures | [`figures/`](figures/) | PNG |

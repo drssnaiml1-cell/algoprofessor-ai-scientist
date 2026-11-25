@@ -8,7 +8,8 @@
 
 | Material | File | Format |
 |---|---|---|
-| 📘 Student notes | [`notes/S06_Notes.pdf`](notes/S06_Notes.pdf) · [LaTeX source](notes/S06_Notes.tex) | PDF + LaTeX |
+| 📘 Student notes (slide-by-slide, elaborated) | [`notes/S06_Notes.pdf`](notes/S06_Notes.pdf) · [LaTeX source](notes/S06_Notes.tex) | PDF + LaTeX |
+| 🏠 Mon–Sat project homework | [`HOMEWORK.md`](HOMEWORK.md) · also the last pages of the notes PDF | Markdown + PDF |
 | 🖥️ Slides | [`slides/S06_Slides.pdf`](slides/S06_Slides.pdf) · [Beamer source](slides/S06_Slides.tex) | PDF + Beamer |
 | 💻 Notebook (with outputs) | [`notebooks/S06_Production_Responsible_AI.ipynb`](notebooks/S06_Production_Responsible_AI.ipynb) · [Open in Colab](https://colab.research.google.com/github/drssnaiml1-cell/algoprofessor-ai-scientist/blob/main/sunday-06-production-capstone/notebooks/S06_Production_Responsible_AI.ipynb) | Jupyter |
 | 📊 Figures | [`figures/`](figures/) | PNG |

@@ -8,7 +8,8 @@
 
 | Material | File | Format |
 |---|---|---|
-| 📘 Student notes | [`notes/S01_Notes.pdf`](notes/S01_Notes.pdf) · [LaTeX source](notes/S01_Notes.tex) | PDF + LaTeX |
+| 📘 Student notes (slide-by-slide, elaborated) | [`notes/S01_Notes.pdf`](notes/S01_Notes.pdf) · [LaTeX source](notes/S01_Notes.tex) | PDF + LaTeX |
+| 🏠 Mon–Sat project homework | [`HOMEWORK.md`](HOMEWORK.md) · also the last pages of the notes PDF | Markdown + PDF |
 | 🖥️ Slides | [`slides/S01_Slides.pdf`](slides/S01_Slides.pdf) · [Beamer source](slides/S01_Slides.tex) | PDF + Beamer |
 | 💻 Notebook (with outputs) | [`notebooks/S01_Data_ML_Foundations.ipynb`](notebooks/S01_Data_ML_Foundations.ipynb) · [Open in Colab](https://colab.research.google.com/github/drssnaiml1-cell/algoprofessor-ai-scientist/blob/main/sunday-01-data-ml/notebooks/S01_Data_ML_Foundations.ipynb) | Jupyter |
 | 📊 Figures | [`figures/`](figures/) | PNG |

@@ -8,7 +8,8 @@
 
 | Material | File | Format |
 |---|---|---|
-| 📘 Student notes | [`notes/S02_Notes.pdf`](notes/S02_Notes.pdf) · [LaTeX source](notes/S02_Notes.tex) | PDF + LaTeX |
+| 📘 Student notes (slide-by-slide, elaborated) | [`notes/S02_Notes.pdf`](notes/S02_Notes.pdf) · [LaTeX source](notes/S02_Notes.tex) | PDF + LaTeX |
+| 🏠 Mon–Sat project homework | [`HOMEWORK.md`](HOMEWORK.md) · also the last pages of the notes PDF | Markdown + PDF |
 | 🖥️ Slides | [`slides/S02_Slides.pdf`](slides/S02_Slides.pdf) · [Beamer source](slides/S02_Slides.tex) | PDF + Beamer |
 | 💻 Notebook (with outputs) | [`notebooks/S02_Deep_Learning_PyTorch.ipynb`](notebooks/S02_Deep_Learning_PyTorch.ipynb) · [Open in Colab](https://colab.research.google.com/github/drssnaiml1-cell/algoprofessor-ai-scientist/blob/main/sunday-02-deep-learning/notebooks/S02_Deep_Learning_PyTorch.ipynb) | Jupyter |
 | 📊 Figures | [`figures/`](figures/) | PNG |

@@ -25,6 +25,7 @@
 \RequirePackage{lastpage}
 \RequirePackage{listings}
 \RequirePackage{caption}
+\RequirePackage{algpseudocode}
 \RequirePackage[hidelinks]{hyperref}
 
 \renewcommand{\sfdefault}{\rmdefault}
@@ -135,6 +136,38 @@
 \lstset{style=ap}
 
 \newcommand{\figw}[3][0.9]{\begin{center}\includegraphics[width=#1\linewidth]{#2}\captionof{figure}{#3}\end{center}}
+
+
+%% ---------- slide-matching colour-coded boxes (same names as the Beamer theme) ----------
+\tcbset{apnbox/.style={enhanced,breakable,arc=2pt,boxrule=0.7pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  fonttitle=\small\bfseries,before skip=6pt,after skip=6pt}}
+\newtcolorbox{bdef}[1][Definition]{apnbox,colback=navy!4,colframe=navy,colbacktitle=navy,coltitle=gold,title={#1}}
+\newtcolorbox{bex}[1][Example]{apnbox,colback=dataC!5,colframe=dataC,colbacktitle=dataC,coltitle=white,title={#1}}
+\newtcolorbox{bmath}[1][Mathematics]{apnbox,colback=skillC!4,colframe=skillC,colbacktitle=skillC,coltitle=white,title={#1}}
+\newtcolorbox{balgo}[1][Algorithm]{apnbox,colback=goldlight!50,colframe=gold,colbacktitle=gold,coltitle=navy,title={#1}}
+\newtcolorbox{bcode}[1][Code]{apnbox,colback=codebg,colframe=gray!60,colbacktitle=gray!60,coltitle=white,title={#1}}
+\newtcolorbox{bapp}[1][Applications \& real products]{apnbox,colback=saffron!7,colframe=saffron,colbacktitle=saffron,coltitle=white,title={#1}}
+\newtcolorbox{bres}[1][Our notebook result]{apnbox,colback=sun!6,colframe=sun,colbacktitle=sun,coltitle=white,title={#1}}
+\newtcolorbox{bwarn}[1][Pitfall]{apnbox,colback=warnC!5,colframe=warnC,colbacktitle=warnC,coltitle=white,title={#1}}
+\algrenewcommand\algorithmicrequire{\textbf{Input:}}
+\algrenewcommand\algorithmicensure{\textbf{Output:}}
+\newcommand{\topic}[1]{\subsection{#1}}
+\newcommand{\why}[1]{\par\noindent{\color{sun}\bfseries Why it matters.} #1\par}
+
+\newcommand{\legendbox}{%
+\begin{center}
+\resizebox{\linewidth}{!}{\begin{tikzpicture}[every node/.style={rounded corners=2pt,minimum width=2.0cm,minimum height=0.62cm,align=center,font=\scriptsize\bfseries}]
+\node[fill=navy,text=gold] at (0,0) {Definition};
+\node[fill=dataC,text=white] at (2.15,0) {Example};
+\node[fill=skillC,text=white] at (4.3,0) {Mathematics};
+\node[fill=gold,text=navy] at (6.45,0) {Algorithm};
+\node[fill=gray!60,text=white] at (8.6,0) {Code};
+\node[fill=saffron,text=white] at (10.75,0) {Applications};
+\node[fill=sun,text=white] at (12.9,0) {Our result};
+\node[fill=warnC,text=white] at (15.05,0) {Pitfall};
+\end{tikzpicture}}
+\captionof{figure}{Colour code used in these notes and in the slides. Every topic follows: definition $\rightarrow$ example $\rightarrow$ mathematics $\rightarrow$ algorithm $\rightarrow$ code $\rightarrow$ applications $\rightarrow$ our result.}
+\end{center}}
 
 \renewcommand{\arraystretch}{1.3}
 \endinput

@@ -1,0 +1,88 @@
+\clearpage
+\section*{Monday--Saturday Project Homework: PolicyGPT on Real Government Documents}
+\addcontentsline{toc}{section}{Monday--Saturday Project Homework}
+\begin{tcolorbox}[enhanced,colback=navy,colframe=gold,boxrule=0.8pt,arc=3pt,coltext=white,left=8pt,right=8pt,top=6pt,bottom=6pt]
+{\color{gold}\bfseries Weekly project.} Students, parents and staff ask the same policy questions every day. You will build a cited assistant that answers from official documents and refuses to guess.\\[3pt]
+{\color{gold}\bfseries Data:} NEP 2020 + at least 4 UGC/AICTE regulation PDFs (public), BEIR SciFact for retrieval benchmarking\\[3pt]
+{\color{gold}\bfseries Rhythm:} about 2--3 hours a day. Commit every day; tag \texttt{week-4} and create a GitHub Release by \textbf{Saturday 23:59 local time}. Mentors review it before the next Sunday.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Monday --- Ingestion at real scale\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Turn messy PDFs into clean, citable chunks.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Download NEP 2020 and at least 4 UGC/AICTE regulation PDFs from official websites.
+  \item Parse with \texttt{pypdf}; detect scanned pages and OCR them (Tesseract); clean headers and footers.
+  \item Chunk by section headings where possible, with page, section and document metadata.
+  \item Write \texttt{reports/corpus\_card.md} (sources, dates, page counts, known gaps).
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} \texttt{src/ingest.py}, chunk store (JSONL), corpus card\\
+\textbf{\color{navy}Done when:} Every chunk traceable to document, page and section; OCR pages flagged.\\
+\textbf{\color{skillC}Stretch:} Compare fixed-size vs heading-aware chunking on 20 questions.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Tuesday --- Neural embeddings and vector databases\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Upgrade from LSA to real embeddings.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Embed chunks with \texttt{sentence-transformers} (e.g. \texttt{all-MiniLM-L6-v2} and one multilingual model).
+  \item Index in FAISS and Chroma (or pgvector).
+  \item Benchmark LSA vs MiniLM vs BM25 on BEIR SciFact: Recall@10 and nDCG@10.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} Benchmark table in \texttt{reports/retrieval.md}\\
+\textbf{\color{navy}Done when:} All retrievers scored with the same queries and metrics; index build time and size reported.\\
+\textbf{\color{skillC}Stretch:} Test the multilingual model on 20 Hindi questions.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Wednesday --- Hybrid search and a cross-encoder re-ranker\hfill\normalfont\small 2--3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Get the right passage into the top 3.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Implement hybrid retrieval with reciprocal-rank fusion.
+  \item Add a cross-encoder re-ranker (e.g. \texttt{cross-encoder/ms-marco-MiniLM-L-6-v2}) over the top 20.
+  \item Run an ablation: BM25, dense, hybrid, hybrid + re-ranker, on 50 of your own policy questions.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} Ablation table with hit@3 and MRR\\
+\textbf{\color{navy}Done when:} Each component's contribution measured on the same question set.\\
+\textbf{\color{skillC}Stretch:} Tune the fusion constant and the number of candidates re-ranked.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Thursday --- Grounded generation, abstention and prompt injection\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Answer only from sources.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Generate answers with an LLM (API or local Ollama) using a prompt that requires citations for every sentence.
+  \item Keep the coverage-based abstention rule; add a 'not in documents' answer path.
+  \item Plant a document chunk containing a malicious instruction ('ignore previous instructions…') and test that the system does not obey it.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} \texttt{src/answer.py}, injection test results\\
+\textbf{\color{navy}Done when:} Every answer sentence has a citation; the injection test passes or the failure is documented with a fix.\\
+\textbf{\color{skillC}Stretch:} Add a check that each cited page actually contains the quoted fact.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Friday --- A 100-question golden set and RAGAS\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Measure quality like a product team.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item With your team, write 100 questions: 80 answerable (with gold page) and 20 unanswerable.
+  \item Split into dev (30) and test (70); tune thresholds on dev only.
+  \item Score faithfulness and answer relevance with \texttt{ragas}; add the golden set as a \texttt{pytest} regression test.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} \texttt{tests/golden.jsonl}, \texttt{tests/test\_rag.py}, \texttt{reports/evaluation.md}\\
+\textbf{\color{navy}Done when:} Test set untouched during tuning; abstention accuracy and faithfulness reported.\\
+\textbf{\color{skillC}Stretch:} Run the regression test in GitHub Actions on every push.
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries Saturday --- Deploy PolicyGPT\hfill\normalfont\small 3 h},coltitle=white,colbacktitle=sun,fonttitle=\small]
+\textbf{Goal.} Make it usable by real people.
+\begin{enumerate}[itemsep=1pt,topsep=2pt]
+  \item Serve with FastAPI; add a simple web page showing answers with clickable page citations.
+  \item Add rate limiting and logging of questions (no personal data).
+  \item Record a 5-minute demo; push, tag \texttt{week-4}, create a Release.
+\end{enumerate}
+\textbf{\color{dataC}Deliverable:} Deployed app, demo link, Release \texttt{week-4}\\
+\textbf{\color{navy}Done when:} Citations open the right page; unanswerable questions are refused politely.\\
+\textbf{\color{skillC}Stretch:} Add Hindi question support end to end.
+\end{tcolorbox}
+
