@@ -281,7 +281,7 @@ git push origin sunday-2
 | USA | Sundays, 09:00–15:00 local (city announced per batch) | US$ 1,000 |
 | Canada | Sundays, 09:00–15:00 local (city announced per batch) | US$ 1,000 |
 
-**Applications:** cto@algoprofessor.com · **Director:** ceo@algoprofessor.com · **Phone:** +91-6303432833 · **Web:** [www.algoprofessor.com](https://www.algoprofessor.com)
+**Applications:** cto@algoprofessor.com · **Director:** ceo@algoprofessor.com · **Web:** [www.algoprofessor.com](https://www.algoprofessor.com)
 
 ---
 
