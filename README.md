@@ -49,12 +49,7 @@
 | **Outcome** | 6 GitHub portfolio projects, 1 deployed capstone, Demo Day pitch, mock-interview report |
 | **Certificate** | *AlgoProfessor Certified AI Scientist — Hands-On (Level 1)* |
 
-```mermaid
-flowchart LR
-  S1["Sunday 1<br/>Data & ML"] --> S2["Sunday 2<br/>Deep Learning"] --> S3["Sunday 3<br/>Transformers & LLMs"]
-  S3 --> S4["Sunday 4<br/>Retrieval & RAG"] --> S5["Sunday 5<br/>Agentic AI"] --> S6["Sunday 6<br/>Production & Capstone"]
-  S6 --> D["Demo Day + Career Lab"] --> J["16 job roles<br/>or your own start-up"]
-```
+<p align="center"><img src="assets/programme_flow.svg" alt="Programme flow: six Sundays, six projects, Demo Day, 16 job roles" width="100%"/></p>
 
 ## 2. Programme fee
 

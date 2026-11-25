@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 330" width="1200" height="330" font-family="'Times New Roman', Times, 'Liberation Serif', serif" role="img" aria-label="AlgoProfessor AI Scientist programme flow: six Sundays, each with a project, leading to Demo Day and 16 job roles">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B1F3A"/><stop offset="1" stop-color="#13294B"/>
+    </linearGradient>
+    <linearGradient id="tri" x1="0" x2="1">
+      <stop offset="0" stop-color="#FF9933"/><stop offset="0.333" stop-color="#FF9933"/>
+      <stop offset="0.333" stop-color="#FFFFFF"/><stop offset="0.666" stop-color="#FFFFFF"/>
+      <stop offset="0.666" stop-color="#138808"/><stop offset="1" stop-color="#138808"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#E8C860"/>
+    </marker>
+    <path id="route" d="M 72 150 L 1128 150"/>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="330" rx="18" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1200" height="7" fill="url(#tri)"/>
+  <!-- faint grid of 'neurons' -->
+  <g fill="#C9A227" opacity="0.18">
+    <circle cx="60" cy="40" r="2"/><circle cx="180" cy="290" r="2"/><circle cx="330" cy="38" r="2"/><circle cx="520" cy="300" r="2"/>
+    <circle cx="700" cy="36" r="2"/><circle cx="880" cy="295" r="2"/><circle cx="1050" cy="40" r="2"/><circle cx="1150" cy="290" r="2"/>
+  </g>
+
+  <text x="600" y="44" text-anchor="middle" fill="#E8C860" font-size="15" letter-spacing="3" font-weight="bold">ALGOPROFESSOR · AI SCIENTIST HANDS-ON · PROGRAMME FLOW</text>
+  <text x="600" y="68" text-anchor="middle" fill="#cfd8e6" font-size="14">6 Sundays · 30 hours · every Sunday: 2 h TEACH + 3 h BUILD + GitHub push by 18:00</text>
+
+  <!-- connecting arrows with flowing dashes -->
+  <g stroke="#E8C860" stroke-width="2.5" fill="none" marker-end="url(#arr)" stroke-dasharray="6 6">
+    <animate attributeName="stroke-dashoffset" from="24" to="0" dur="0.9s" repeatCount="indefinite"/>
+    <line x1="132" y1="150" x2="152" y2="150"/><line x1="264" y1="150" x2="284" y2="150"/><line x1="396" y1="150" x2="416" y2="150"/>
+    <line x1="528" y1="150" x2="548" y2="150"/><line x1="660" y1="150" x2="680" y2="150"/><line x1="792" y1="150" x2="812" y2="150"/>
+    <line x1="924" y1="150" x2="944" y2="150"/>
+  </g>
+
+  <!-- travelling 'signal' that lights the path -->
+  <circle r="7" fill="#FFE9A6" filter="url(#glow)">
+    <animateMotion dur="8s" repeatCount="indefinite" keyPoints="0;1" keyTimes="0;1" calcMode="linear">
+      <mpath href="#route"/>
+    </animateMotion>
+    <animate attributeName="r" values="6;9;6" dur="0.8s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- card template: x, colour, labels; each card glows in sequence (8 s cycle) -->
+  <g filter="url(#shadow)">
+    <!-- Sunday 1 -->
+    <g>
+      <rect x="20" y="100" width="112" height="100" rx="12" fill="#0F6E7A" stroke="#E8C860" stroke-width="1.5">
+        <animate attributeName="stroke-width" values="1.5;5;1.5;1.5" keyTimes="0;0.06;0.12;1" dur="8s" begin="0s" repeatCount="indefinite"/>
+      </rect>
+      <text x="76" y="122" text-anchor="middle" fill="#F6EBC4" font-size="11" letter-spacing="1.5">SUNDAY 1</text>
+      <text x="76" y="147" text-anchor="middle" fill="#fff" font-size="15" font-weight="bold">Data &amp;</text>
+      <text x="76" y="165" text-anchor="middle" fill="#fff" font-size="15" font-weight="bold">ML</text>
+      <text x="76" y="189" text-anchor="middle" fill="#F6EBC4" font-size="11">Hours 1–5</text>
+    </g>
+    <!-- Sunday 2 -->
+    <g>
+      <rect x="152" y="100" width="112" height="100" rx="12" fill="#A4243B" stroke="#E8C860" stroke-width="1.5">
+        <animate attributeName="stroke-width" values="1.5;1.5;5;1.5;1.5" keyTimes="0;0.12;0.18;0.24;1" dur="8s" repeatCount="indefinite"/>
+      </rect>
+      <text x="208" y="122" text-anchor="middle" fill="#F6EBC4" font-size="11" letter-spacing="1.5">SUNDAY 2</text>
+      <text x="208" y="147" text-anchor="middle" fill="#fff" font-size="15" font-weight="bold">Deep</text>
+      <text x="208" y="165" text-anchor="middle" fill="#fff" font-size="15" font-weight="bold">Learning</text>
+      <text x="208" y="189" text-anchor="middle" fill="#F6EBC4" font-size="11">Hours 6–10</text>
+    </g>
+    <!-- Sunday 3 -->
+    <g>
+      <rect x="284" y="100" width="112" height="100" rx="12" fill="#5B3A8E" stroke="#E8C860" stroke-width="1.5">
+        <animate attributeName="stroke-width" values="1.5;1.5;5;1.5;1.5" keyTimes="0;0.24;0.30;0.36;1" dur="8s" repeatCount="indefinite"/>
+      </rect>
+      <text x="340" y="122" text-anchor="middle" fill="#F6EBC4" font-size="11" letter-spacing="1.5">SUNDAY 3</text>
+      <text x="340" y="147" text-anchor="middle" fill="#fff" font-size="15" font-weight="bold">Transformers</text>
+      <text x="340" y="165" text-anchor="middle" fill="#fff" font-size="15" font-weight="bold">&amp; LLMs</text>
+      <text x="340" y="189" text-anchor="middle" fill="#F6EBC4" font-size="11">Hours 11–15</text>
+    </g>
+    <!-- Sunday 4 -->
+    <g>
+      <rect x="416" y="100" width="112" height="100" rx="12" fill="#2E7D32" stroke="#E8C860" stroke-width="1.5">
+        <animate attributeName="stroke-width" values="1.5;1.5;5;1.5;1.5" keyTimes="0;0.36;0.42;0.48;1" dur="8s" repeatCount="indefinite"/>
+      </rect>
+      <text x="472" y="122" text-anchor="middle" fill="#F6EBC4" font-size="11" letter-spacing="1.5">SUNDAY 4</text>
+      <text x="472" y="147" text-anchor="middle" fill="#fff" font-size="15" font-weight="bold">Retrieval</text>
+      <text x="472" y="165" text-anchor="middle" fill="#fff" font-size="15" font-weight="bold">&amp; RAG</text>
+      <text x="472" y="189" text-anchor="middle" fill="#F6EBC4" font-size="11">Hours 16–20</text>
+    </g>
+    <!-- Sunday 5 -->
+    <g>
+      <rect x="548" y="100" width="112" height="100" rx="12" fill="#C25E00" stroke="#E8C860" stroke-width="1.5">
+        <animate attributeName="stroke-width" values="1.5;1.5;5;1.5;1.5" keyTimes="0;0.48;0.54;0.60;1" dur="8s" repeatCount="indefinite"/>
+      </rect>
+      <text x="604" y="122" text-anchor="middle" fill="#F6EBC4" font-size="11" letter-spacing="1.5">SUNDAY 5</text>
+      <text x="604" y="147" text-anchor="middle" fill="#fff" font-size="15" font-weight="bold">Agentic</text>
+      <text x="604" y="165" text-anchor="middle" fill="#fff" font-size="15" font-weight="bold">AI</text>
+      <text x="604" y="189" text-anchor="middle" fill="#F6EBC4" font-size="11">Hours 21–25</text>
+    </g>
+    <!-- Sunday 6 -->
+    <g>
+      <rect x="680" y="100" width="112" height="100" rx="12" fill="#1F4E9C" stroke="#E8C860" stroke-width="1.5">
+        <animate attributeName="stroke-width" values="1.5;1.5;5;1.5;1.5" keyTimes="0;0.60;0.66;0.72;1" dur="8s" repeatCount="indefinite"/>
+      </rect>
+      <text x="736" y="122" text-anchor="middle" fill="#F6EBC4" font-size="11" letter-spacing="1.5">SUNDAY 6</text>
+      <text x="736" y="147" text-anchor="middle" fill="#fff" font-size="15" font-weight="bold">Production</text>
+      <text x="736" y="165" text-anchor="middle" fill="#fff" font-size="15" font-weight="bold">&amp; Capstone</text>
+      <text x="736" y="189" text-anchor="middle" fill="#F6EBC4" font-size="11">Hours 26–30</text>
+    </g>
+    <!-- Demo Day -->
+    <g>
+      <rect x="812" y="100" width="112" height="100" rx="12" fill="#C9A227" stroke="#FFFFFF" stroke-width="1.5">
+        <animate attributeName="stroke-width" values="1.5;1.5;5;1.5;1.5" keyTimes="0;0.72;0.78;0.84;1" dur="8s" repeatCount="indefinite"/>
+      </rect>
+      <text x="868" y="122" text-anchor="middle" fill="#0B1F3A" font-size="11" letter-spacing="1.5">HOURS 29–30</text>
+      <text x="868" y="147" text-anchor="middle" fill="#0B1F3A" font-size="15" font-weight="bold">Demo Day +</text>
+      <text x="868" y="165" text-anchor="middle" fill="#0B1F3A" font-size="15" font-weight="bold">Career Lab</text>
+      <text x="868" y="189" text-anchor="middle" fill="#0B1F3A" font-size="11">pitch · mock interview</text>
+    </g>
+    <!-- Jobs -->
+    <g>
+      <rect x="944" y="96" width="236" height="108" rx="14" fill="#138808" stroke="#E8C860" stroke-width="2">
+        <animate attributeName="fill" values="#138808;#138808;#1aa30d;#138808" keyTimes="0;0.84;0.92;1" dur="8s" repeatCount="indefinite"/>
+      </rect>
+      <text x="1062" y="120" text-anchor="middle" fill="#F6EBC4" font-size="11" letter-spacing="1.5">OUTCOME</text>
+      <text x="1062" y="148" text-anchor="middle" fill="#fff" font-size="20" font-weight="bold">16 AI job roles</text>
+      <text x="1062" y="170" text-anchor="middle" fill="#fff" font-size="15">or your own AI start-up</text>
+      <text x="1062" y="192" text-anchor="middle" fill="#F6EBC4" font-size="11">AI Engineer · Agentic AI · MLOps · FDE …</text>
+    </g>
+  </g>
+
+  <!-- project chips under each Sunday -->
+  <g font-size="12" font-weight="bold" text-anchor="middle">
+    <rect x="20" y="214" width="112" height="26" rx="13" fill="#0F6E7A" stroke="#E8C860" stroke-width="1"/><text x="76" y="231" fill="#fff">P1 · Churn</text>
+    <rect x="152" y="214" width="112" height="26" rx="13" fill="#A4243B" stroke="#E8C860" stroke-width="1"/><text x="208" y="231" fill="#fff">P2 · LeafDoctor</text>
+    <rect x="284" y="214" width="112" height="26" rx="13" fill="#5B3A8E" stroke="#E8C860" stroke-width="1"/><text x="340" y="231" fill="#fff">P3 · MiniLLM</text>
+    <rect x="416" y="214" width="112" height="26" rx="13" fill="#2E7D32" stroke="#E8C860" stroke-width="1"/><text x="472" y="231" fill="#fff">P4 · PolicyGPT</text>
+    <rect x="548" y="214" width="112" height="26" rx="13" fill="#C25E00" stroke="#E8C860" stroke-width="1"/><text x="604" y="231" fill="#fff">P5 · ScholarAgent</text>
+    <rect x="680" y="214" width="112" height="26" rx="13" fill="#1F4E9C" stroke="#E8C860" stroke-width="1"/><text x="736" y="231" fill="#fff">P6 · Capstone</text>
+  </g>
+
+  <!-- daily rhythm strip -->
+  <g font-size="12" text-anchor="middle">
+    <rect x="300" y="262" width="160" height="26" rx="6" fill="#C9A227"/><text x="380" y="280" fill="#0B1F3A" font-weight="bold">09:00–11:00 · TEACH</text>
+    <rect x="470" y="262" width="230" height="26" rx="6" fill="#1F3B63" stroke="#C9A227"/><text x="585" y="280" fill="#E8C860" font-weight="bold">11:15–15:00 · BUILD (3 h)</text>
+    <rect x="710" y="262" width="190" height="26" rx="6" fill="#FF9933"/><text x="805" y="280" fill="#fff" font-weight="bold">by 18:00 · GitHub push</text>
+  </g>
+  <text x="600" y="314" text-anchor="middle" fill="#8fa3bd" font-size="12">Hyderabad · Shirdi · USA · Canada · www.algoprofessor.com</text>
+</svg>
