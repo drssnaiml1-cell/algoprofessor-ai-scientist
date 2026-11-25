@@ -14,7 +14,7 @@
 
 <img src="assets/cover.png" width="420" alt="Syllabus cover"/>
 
-📄 **[Download the full syllabus (PDF)](syllabus/AlgoProfessor_AI_Scientist_Syllabus.pdf)** · 🧾 **[LaTeX source](syllabus/AlgoProfessor_AI_Scientist_Syllabus.tex)**
+🌐 **[Visit the course website](https://drssnaiml1-cell.github.io/algoprofessor-ai-scientist/)** · 📄 **[Download the full syllabus (PDF)](syllabus/AlgoProfessor_AI_Scientist_Syllabus.pdf)** · 🧾 **[LaTeX source](syllabus/AlgoProfessor_AI_Scientist_Syllabus.tex)**
 
 </div>
 

@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AlgoProfessor AI Scientist · Hands-On Programme (Sunday Edition)</title>
+<meta name="description" content="AlgoProfessor AI Scientist Hands-On Programme: 6 Sundays, 30 hours, 2 hours teaching + 3 hours real-time project work. Offline in Hyderabad, Shirdi, USA and Canada.">
+<meta property="og:title" content="AlgoProfessor AI Scientist · Hands-On Programme">
+<meta property="og:description" content="6 Sundays · 30 hours · 30 datasets · 94 skills · 16 job roles.">
+<meta property="og:image" content="assets/cover.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%230B1F3A'/><text x='32' y='44' font-family='Times New Roman' font-size='34' font-weight='700' text-anchor='middle' fill='%23C9A227'>AP</text></svg>">
+<style>
+:root{
+  --navy:#0B1F3A; --navy2:#13294B; --navy3:#1F3B63; --gold:#C9A227; --gold2:#E8C860; --goldlt:#F6EBC4;
+  --paper:#FBF8EF; --ink:#16202E; --muted:#5A6A80;
+  --saffron:#FF9933; --green:#138808;
+  --s1:#0F6E7A; --s2:#A4243B; --s3:#5B3A8E; --s4:#2E7D32; --s5:#C25E00; --s6:#1F4E9C;
+  --radius:14px; --shadow:0 10px 30px rgba(11,31,58,.18);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{overflow-x:clip;font-family:"Times New Roman",Times,"Nimbus Roman No9 L",serif;background:var(--paper);color:var(--ink);line-height:1.55;font-size:18px}
+a{color:inherit}
+img{max-width:100%;display:block}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+.tricolour{height:6px;background:linear-gradient(90deg,var(--saffron) 0 33.3%,#fff 33.3% 66.6%,var(--green) 66.6%)}
+
+/* ---------- NAV ---------- */
+nav{position:fixed;top:0;left:0;right:0;z-index:50;transition:background .3s,box-shadow .3s}
+nav.solid{background:rgba(11,31,58,.94);backdrop-filter:blur(8px);box-shadow:0 4px 20px rgba(0,0,0,.25)}
+nav .bar{display:flex;align-items:center;justify-content:space-between;height:66px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff;font-weight:700;font-size:1.25rem}
+.brand .logo{width:38px;height:38px;border-radius:9px;background:var(--gold);color:var(--navy);display:grid;place-items:center;font-weight:700}
+.brand small{display:block;font-weight:400;font-size:.72rem;color:var(--gold2);letter-spacing:.08em;text-transform:uppercase}
+.links{display:flex;gap:22px;align-items:center}
+.links a{color:#e9eef6;text-decoration:none;font-size:1rem;position:relative}
+.links a:not(.btn)::after{content:"";position:absolute;left:0;bottom:-4px;width:0;height:2px;background:var(--gold);transition:width .25s}
+.links a:hover::after,.links a.active::after{width:100%}
+.burger{display:none;background:none;border:0;color:#fff;font-size:1.7rem;cursor:pointer}
+@media (max-width:980px){
+  .links{position:fixed;top:66px;right:0;left:0;flex-direction:column;background:var(--navy);padding:18px;gap:14px;transform:translateY(-130%);transition:transform .3s}
+  .links.open{transform:none}
+  .burger{display:block}
+}
+
+/* ---------- BUTTONS ---------- */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:999px;font-family:inherit;font-size:1rem;font-weight:700;text-decoration:none;cursor:pointer;border:2px solid var(--gold);transition:transform .2s,background .2s,color .2s}
+.btn.gold{background:var(--gold);color:var(--navy)}
+.btn.gold:hover{background:var(--gold2);transform:translateY(-2px)}
+.btn.ghost{background:transparent;color:#fff}
+.btn.ghost:hover{background:rgba(201,162,39,.15);transform:translateY(-2px)}
+.btn.small{padding:7px 14px;font-size:.9rem}
+
+/* ---------- HERO ---------- */
+#webgl{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hero{position:relative;min-height:100vh;background:radial-gradient(ellipse at 70% 40%,#1b3a6b 0%,var(--navy) 55%,#060f1f 100%);color:#fff;overflow:hidden;display:flex;align-items:center}
+.hero .scrim{position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,15,31,.88) 0%,rgba(6,15,31,.55) 45%,rgba(6,15,31,0) 75%);pointer-events:none}
+@media (max-width:900px){.hero .scrim{background:rgba(6,15,31,.62)}}
+.hero .wrap{position:relative;z-index:2;padding-top:90px;padding-bottom:60px}
+.eyebrow{display:inline-flex;gap:8px;align-items:center;font-size:.85rem;letter-spacing:.18em;text-transform:uppercase;color:var(--saffron);font-weight:700}
+.eyebrow::before{content:"";width:26px;height:2px;background:linear-gradient(90deg,var(--saffron),#fff,var(--green))}
+.hero h1{font-size:clamp(2.8rem,7vw,5.6rem);line-height:1.02;margin:14px 0 6px;letter-spacing:-.01em}
+.hero h1 span{color:var(--gold)}
+.hero .sub{font-size:clamp(1.15rem,2.2vw,1.5rem);color:#d8e0ee;max-width:640px}
+.typed{color:var(--gold2);font-weight:700;border-right:2px solid var(--gold2);padding-right:4px;white-space:nowrap}
+.hero .ctas{display:flex;flex-wrap:wrap;gap:14px;margin:30px 0 40px}
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;max-width:820px}
+.stat{border:1px solid rgba(201,162,39,.55);background:rgba(19,41,75,.6);backdrop-filter:blur(4px);border-radius:12px;padding:14px 10px;text-align:center}
+.stat b{display:block;font-size:2.1rem;color:var(--gold);line-height:1}
+.stat span{font-size:.85rem;color:#cfd8e6}
+@media (max-width:700px){.stats{grid-template-columns:repeat(3,1fr)}.stat:nth-child(n+4){display:none}}
+.scroll-hint{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);z-index:2;color:var(--gold2);font-size:.85rem;letter-spacing:.15em;animation:bob 2s infinite}
+@keyframes bob{50%{transform:translate(-50%,6px)}}
+
+/* ---------- SECTIONS ---------- */
+section.block{padding:96px 0}
+section.alt{background:#fff}
+section.dark{background:var(--navy);color:#fff}
+.sec-head{text-align:center;max-width:760px;margin:0 auto 46px}
+.sec-head .kicker{color:var(--gold);font-weight:700;letter-spacing:.2em;text-transform:uppercase;font-size:.82rem}
+.sec-head h2{font-size:clamp(2rem,4vw,2.9rem);color:var(--navy);margin:6px 0 10px;line-height:1.1}
+section.dark .sec-head h2{color:#fff}
+.sec-head p{color:var(--muted)}
+section.dark .sec-head p{color:#c3cede}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+
+/* ---------- LIVE PANEL ---------- */
+.live{display:grid;grid-template-columns:1.2fr 1fr;gap:22px}
+@media (max-width:860px){.live{grid-template-columns:1fr}}
+.card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:26px;border-top:4px solid var(--gold)}
+.countdown{display:flex;gap:12px;margin:14px 0}
+.cd{flex:1;background:var(--navy);color:#fff;border-radius:10px;text-align:center;padding:12px 4px}
+.cd b{display:block;font-size:2.1rem;color:var(--gold);line-height:1.05}
+.cd span{font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:#cbd5e4}
+.daybar{display:flex;height:58px;border-radius:10px;overflow:hidden;margin-top:14px;font-size:.82rem;font-weight:700}
+.daybar div{display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;position:relative}
+.daybar .t{background:var(--gold);color:var(--navy)}
+.daybar .w{background:var(--navy);color:var(--gold2)}
+.daybar .b{background:#e5e2d6;color:var(--muted);font-weight:400}
+.daybar .g{background:var(--saffron);color:#fff}
+.daybar div.now{outline:3px solid var(--green);outline-offset:-3px}
+.daylabels{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-top:4px}
+.statusline{margin-top:12px;font-weight:700;color:var(--navy)}
+.statusline em{color:var(--green);font-style:normal}
+
+/* ---------- FEES ---------- */
+.toggle{display:inline-flex;background:#e9e4d3;border-radius:999px;padding:4px;margin:0 auto 30px}
+.toggle button{border:0;background:none;font-family:inherit;font-size:1rem;padding:9px 20px;border-radius:999px;cursor:pointer;color:var(--navy);font-weight:700}
+.toggle button.on{background:var(--navy);color:var(--gold)}
+.fees{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+@media (max-width:900px){.fees{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:520px){.fees{grid-template-columns:1fr}}
+.fee{background:#fff;border-radius:var(--radius);padding:26px 20px;text-align:center;box-shadow:var(--shadow);border:2px solid transparent;transition:transform .25s,border-color .25s}
+.fee:hover{transform:translateY(-6px);border-color:var(--gold)}
+.fee .flag{height:5px;border-radius:3px;margin:-8px auto 16px;width:60px}
+.fee h3{color:var(--navy);font-size:1.35rem}
+.fee .price{font-size:2.3rem;color:var(--gold);font-weight:700;margin:8px 0}
+.fee .note{font-size:.9rem;color:var(--muted)}
+.fee.dim{opacity:.35;transform:scale(.97)}
+.includes{max-width:860px;margin:28px auto 0;text-align:center;color:var(--muted)}
+
+/* ---------- SYLLABUS ---------- */
+.tabs{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:26px}
+.tab{border:0;font-family:inherit;font-size:1rem;cursor:pointer;padding:12px 18px;border-radius:12px;background:#ece7d8;color:var(--navy);font-weight:700;transition:all .2s;text-align:left;line-height:1.15}
+.tab small{display:block;font-weight:400;font-size:.8rem;opacity:.8}
+.tab.on{color:#fff;transform:translateY(-3px);box-shadow:var(--shadow)}
+.sunday-head{border-radius:var(--radius) var(--radius) 0 0;color:#fff;padding:22px 26px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;align-items:center}
+.sunday-head h3{font-size:1.6rem}
+.sunday-head .goal{font-size:1.02rem;opacity:.92;max-width:720px}
+.hours{background:#fff;border-radius:0 0 var(--radius) var(--radius);box-shadow:var(--shadow);padding:18px}
+.hour{display:grid;grid-template-columns:70px 1fr;gap:16px;padding:16px;border-radius:10px;transition:background .2s;cursor:pointer}
+.hour:hover{background:#f7f3e6}
+.hour + .hour{border-top:1px dashed #e0d9c2}
+.hnum{text-align:center}
+.hnum b{display:block;font-size:1.7rem;color:var(--navy);line-height:1}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:5px;margin-top:6px}
+.tag.TEACH{background:var(--gold);color:var(--navy)}
+.tag.BUILD{background:var(--navy);color:var(--gold)}
+.hour h4{font-size:1.15rem;color:var(--navy);margin-bottom:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{font-size:.85rem;padding:3px 10px;border-radius:999px;background:#f2eee1;color:var(--navy)}
+.chip.ds{background:#e3f3e8;color:#16603f;font-weight:700}
+.chip.sk{background:#efe8f7;color:#5a3590}
+.deliv{margin-top:14px;background:var(--goldlt);border:1px solid var(--gold);border-radius:10px;padding:14px 16px;font-size:1rem}
+.deliv b{color:var(--navy)}
+.deliv .dl{color:#b35c00;font-weight:700}
+
+/* ---------- SKILLS ---------- */
+.skills{display:grid;grid-template-columns:1.1fr 1fr;gap:30px;align-items:start}
+@media (max-width:900px){.skills{grid-template-columns:1fr}}
+.sbar{margin:10px 0;cursor:pointer}
+.sbar .lbl{display:flex;justify-content:space-between;font-weight:700;color:var(--navy);font-size:1rem}
+.sbar .track{height:14px;background:#ebe5d2;border-radius:999px;overflow:hidden;margin-top:4px}
+.sbar .fill{height:100%;width:0;border-radius:999px;transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+.sbar.on .lbl{color:var(--gold)}
+.skill-detail{position:sticky;top:90px}
+.skill-detail h3{color:var(--navy);font-size:1.5rem}
+.skill-detail .hrs{color:var(--muted);margin-bottom:12px}
+
+/* ---------- JOBS ---------- */
+.filters{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:26px}
+.filters button{font-family:inherit;font-size:.95rem;border:2px solid var(--navy);background:#fff;color:var(--navy);padding:7px 15px;border-radius:999px;cursor:pointer;font-weight:700}
+.filters button.on{background:var(--navy);color:var(--gold)}
+.jobs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.job{background:#fff;border-radius:12px;padding:20px;box-shadow:0 4px 16px rgba(11,31,58,.1);border-left:5px solid var(--gold);transition:transform .25s,opacity .3s}
+.job:hover{transform:translateY(-4px)}
+.job h4{color:var(--navy);font-size:1.15rem}
+.job p{font-size:.95rem;color:var(--muted);margin:6px 0}
+.job .proof{display:flex;gap:5px;flex-wrap:wrap}
+.pchip{font-size:.75rem;font-weight:700;color:#fff;padding:2px 8px;border-radius:5px}
+.job.hide{display:none}
+.where{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
+@media (max-width:800px){.where{grid-template-columns:1fr}}
+.where div{background:var(--navy);color:#fff;border-radius:12px;padding:18px}
+.where b{color:var(--gold)}
+
+/* ---------- ROADMAP ---------- */
+.road{position:relative;margin-top:20px}
+.road::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:3px;background:linear-gradient(var(--gold),var(--gold2));transform:translateX(-50%)}
+.wave{position:relative;width:50%;padding:0 40px 40px}
+.wave:nth-child(odd){margin-left:0;text-align:right}
+.wave:nth-child(even){margin-left:50%}
+.wave .dot{position:absolute;top:6px;width:22px;height:22px;border-radius:50%;border:4px solid var(--navy);background:var(--gold)}
+.wave:nth-child(odd) .dot{right:-11px}
+.wave:nth-child(even) .dot{left:-11px}
+.wave .yr{font-size:1.6rem;font-weight:700;color:var(--gold)}
+.wave h4{font-size:1.25rem;margin:2px 0 6px}
+.wave p{color:#c8d2e2;font-size:.98rem}
+.wave .roles{color:var(--gold2);font-size:.95rem;margin-top:6px}
+.badge-now{display:inline-block;background:var(--green);color:#fff;font-size:.75rem;padding:2px 8px;border-radius:5px;margin-left:6px;vertical-align:middle}
+@media (max-width:760px){.road::before{left:12px}.wave,.wave:nth-child(even){width:100%;margin-left:0;text-align:left;padding:0 0 34px 44px}.wave .dot,.wave:nth-child(odd) .dot,.wave:nth-child(even) .dot{left:1px;right:auto}}
+.disclaim{text-align:center;color:#aab6c8;font-size:.92rem;margin-top:10px}
+
+/* ---------- GITHUB ---------- */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width:860px){.steps{grid-template-columns:1fr}}
+.step{background:#fff;border-radius:12px;padding:20px;box-shadow:0 4px 16px rgba(11,31,58,.1);position:relative}
+.step .n{position:absolute;top:-14px;left:18px;width:34px;height:34px;border-radius:50%;background:var(--navy);color:var(--gold);display:grid;place-items:center;font-weight:700}
+.step h4{color:var(--navy);margin:8px 0 4px}
+.step p{font-size:.95rem;color:var(--muted)}
+.code{position:relative;background:#081629;color:#e6edf6;border-radius:12px;padding:20px 20px 18px;margin-top:24px;font-family:"Times New Roman",Times,serif;font-size:1rem;overflow-x:auto;white-space:pre;border:1px solid var(--navy3)}
+.code .c{color:#8fa3bd}
+.code .k{color:var(--gold2)}
+.copy{position:absolute;top:10px;right:10px}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:24px}
+@media (max-width:860px){.twocol{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(11,31,58,.1)}
+th{background:var(--navy);color:var(--gold);text-align:left;padding:11px 14px;font-size:1rem}
+td{padding:10px 14px;border-top:1px solid #eee6cf;font-size:.98rem}
+tr:nth-child(even) td{background:#fbf8ef}
+.namegen{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.namegen select,.namegen input{font-family:inherit;font-size:1rem;padding:8px 10px;border:1px solid #cfc6a8;border-radius:8px}
+.reponame{margin-top:10px;font-weight:700;color:var(--navy);word-break:break-all;background:var(--goldlt);padding:10px 12px;border-radius:8px}
+
+/* ---------- CERTIFICATE ---------- */
+.certwrap{display:grid;grid-template-columns:320px 1fr;gap:26px;align-items:center}
+@media (max-width:900px){.certwrap{grid-template-columns:1fr}}
+.cert{aspect-ratio:1.414/1;background:#fff;border:8px solid var(--navy);outline:2px solid var(--gold);outline-offset:-16px;position:relative;padding:5% 6%;text-align:center;box-shadow:var(--shadow);overflow:hidden}
+.cert::before,.cert::after{content:"";position:absolute;left:22px;right:22px;height:5px}
+.cert::before{top:22px;background:var(--saffron)}
+.cert::after{bottom:22px;background:var(--green)}
+.cert .org{color:var(--navy);font-weight:700;font-size:clamp(1rem,2.2vw,1.6rem);margin-top:2%}
+.cert .ttl{color:#a8841c;font-variant:small-caps;font-weight:700;font-size:clamp(1.1rem,3vw,2.2rem);letter-spacing:.04em;margin:2% 0 1%}
+.cert .cname{color:var(--navy);font-weight:700;font-size:clamp(1.2rem,3.4vw,2.4rem);border-bottom:1px solid var(--gold);display:inline-block;padding:0 30px 4px;min-width:50%}
+.cert .body{font-size:clamp(.62rem,1.3vw,.95rem);margin:2% auto;max-width:86%}
+.cert .meta{display:flex;justify-content:space-between;padding:0 6%;font-size:clamp(.55rem,1.1vw,.82rem);color:var(--navy);margin-top:2%}
+.cert .meta b{display:block;color:#a8841c;font-variant:small-caps}
+.cert .seal{position:absolute;bottom:6%;left:50%;transform:translateX(-50%);width:clamp(44px,7vw,78px);height:clamp(44px,7vw,78px);border-radius:50%;background:var(--navy);border:3px solid var(--gold);color:var(--gold);display:grid;place-items:center;font-size:clamp(.45rem,.9vw,.7rem);font-weight:700;line-height:1.1}
+.cert .sig{position:absolute;bottom:10%;font-size:clamp(.5rem,1vw,.78rem);color:var(--navy);width:30%;border-top:1px solid var(--navy);padding-top:4px}
+.cert .sig.l{left:8%}.cert .sig.r{right:8%}
+.form label{display:block;font-weight:700;color:var(--navy);margin:12px 0 4px}
+.form input,.form select,.form textarea{width:100%;font-family:inherit;font-size:1rem;padding:10px 12px;border:1px solid #cfc6a8;border-radius:8px;background:#fff}
+
+/* ---------- FAQ / ENROL ---------- */
+.faq details{background:#fff;border-radius:10px;margin-bottom:10px;box-shadow:0 2px 10px rgba(11,31,58,.08)}
+.faq summary{cursor:pointer;padding:16px 20px;font-weight:700;color:var(--navy);list-style:none;display:flex;justify-content:space-between}
+.faq summary::after{content:"+";color:var(--gold);font-size:1.4rem;line-height:1}
+.faq details[open] summary::after{content:"–"}
+.faq details p{padding:0 20px 16px;color:var(--muted)}
+.enrol{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+@media (max-width:860px){.enrol{grid-template-columns:1fr}}
+.honest{background:var(--navy);color:#e6ecf5;border-left:5px solid var(--gold);border-radius:10px;padding:18px 22px;margin-top:30px}
+.honest b{color:var(--gold)}
+footer{background:#060f1f;color:#aab6c8;padding:46px 0 26px;font-size:.95rem}
+footer .cols{display:grid;grid-template-columns:2fr 1fr 1fr;gap:26px}
+@media (max-width:760px){footer .cols{grid-template-columns:1fr}}
+footer h4{color:var(--gold);margin-bottom:8px}
+footer a{color:#dbe3ef;text-decoration:none}
+footer a:hover{color:var(--gold)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,120px);background:var(--navy);color:var(--gold);padding:12px 22px;border-radius:999px;font-weight:700;z-index:99;transition:transform .3s;box-shadow:var(--shadow)}
+.toast.show{transform:translate(-50%,0)}
+.progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--saffron),var(--gold),var(--green));z-index:60;width:0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.reveal{opacity:1;transform:none}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
+</script>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+
+<nav id="nav">
+  <div class="tricolour"></div>
+  <div class="wrap bar">
+    <a class="brand" href="#top"><span class="logo">AP</span><span>AlgoProfessor<small>AI Scientist · Hands-On</small></span></a>
+    <button class="burger" id="burger" aria-label="Open menu">☰</button>
+    <div class="links" id="links">
+      <a href="#live">Live</a><a href="#fees">Fees</a><a href="#syllabus">Syllabus</a><a href="#skills">Skills</a>
+      <a href="#jobs">Jobs</a><a href="#roadmap">2026–2035</a><a href="#github">GitHub</a><a href="#certificate">Certificate</a>
+      <a class="btn gold small" href="#enrol">Enrol</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="hero" id="top">
+  <canvas id="webgl" aria-hidden="true"></canvas>
+  <div class="scrim"></div>
+  <div class="wrap">
+    <div class="eyebrow">Made in India · Training for the World</div>
+    <h1>AI <span>Scientist</span><br>Hands-On Programme</h1>
+    <p class="sub">6 Sundays · 30 hours · 2 h hands-on teaching + 3 h real-time project work, every Sunday. Become an <span class="typed" id="typed">AI Engineer</span></p>
+    <div class="ctas">
+      <a class="btn gold" href="#enrol">Enrol now →</a>
+      <a class="btn ghost" href="syllabus/AlgoProfessor_AI_Scientist_Syllabus.pdf" target="_blank" rel="noopener">⬇ Syllabus PDF</a>
+      <a class="btn ghost" href="#syllabus">Explore the 30 hours</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><b data-count="30">0</b><span>Contact hours</span></div>
+      <div class="stat"><b data-count="18">0</b><span>Real-time build hours</span></div>
+      <div class="stat"><b data-count="30">0</b><span>Datasets</span></div>
+      <div class="stat"><b data-count="94">0</b><span>Hands-on skills</span></div>
+      <div class="stat"><b data-count="16">0</b><span>Job roles</span></div>
+    </div>
+  </div>
+  <div class="scroll-hint">SCROLL ↓</div>
+</header>
+
+<!-- ================= LIVE ================= -->
+<section class="block" id="live">
+  <div class="wrap">
+    <div class="sec-head reveal"><div class="kicker">Live Sunday clock</div><h2>Every Sunday, the same rhythm</h2>
+      <p>Times shown in your own local time zone. Classes run 09:00–15:00 local time at every campus, and the GitHub submission closes at 18:00.</p></div>
+    <div class="live">
+      <div class="card reveal">
+        <h3 style="color:var(--navy)">Today's Sunday rhythm</h3>
+        <div class="daybar" id="daybar">
+          <div class="t" style="flex:60" data-s="540" data-e="600">Hour 1<br>Teach</div>
+          <div class="t" style="flex:60" data-s="600" data-e="660">Hour 2<br>Teach</div>
+          <div class="b" style="flex:15" data-s="660" data-e="675">Tea</div>
+          <div class="w" style="flex:60" data-s="675" data-e="735">Hour 3<br>Build</div>
+          <div class="b" style="flex:45" data-s="735" data-e="780">Lunch</div>
+          <div class="w" style="flex:60" data-s="780" data-e="840">Hour 4<br>Build</div>
+          <div class="w" style="flex:60" data-s="840" data-e="900">Hour 5<br>Build</div>
+          <div class="g" style="flex:60" data-s="900" data-e="1080">Push to<br>GitHub</div>
+        </div>
+        <div class="daylabels"><span>09:00</span><span>11:00</span><span>13:00</span><span>15:00</span><span>18:00</span></div>
+        <p class="statusline" id="status">Loading…</p>
+      </div>
+      <div class="card reveal">
+        <h3 style="color:var(--navy)" id="cdTitle">Next GitHub deadline</h3>
+        <div class="countdown">
+          <div class="cd"><b id="cdD">0</b><span>Days</span></div>
+          <div class="cd"><b id="cdH">0</b><span>Hours</span></div>
+          <div class="cd"><b id="cdM">0</b><span>Min</span></div>
+          <div class="cd"><b id="cdS">0</b><span>Sec</span></div>
+        </div>
+        <p style="color:var(--muted)" id="cdNote">Sunday 18:00, your local time.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FEES ================= -->
+<section class="block alt" id="fees">
+  <div class="wrap" style="text-align:center">
+    <div class="sec-head reveal"><div class="kicker">Programme fee</div><h2>Four offline campuses</h2><p>Same syllabus, same mentors' standard, same certificate at every campus.</p></div>
+    <div class="toggle reveal" id="region">
+      <button class="on" data-r="all">All campuses</button><button data-r="in">India</button><button data-r="na">USA &amp; Canada</button>
+    </div>
+    <div class="fees">
+      <div class="fee reveal" data-r="in"><div class="flag" style="background:linear-gradient(90deg,var(--saffron),#fff,var(--green))"></div><h3>Hyderabad</h3><div class="note">India · Flagship campus</div><div class="price">₹50,000</div><div class="note">Sundays 09:00–15:00 IST</div></div>
+      <div class="fee reveal" data-r="in"><div class="flag" style="background:linear-gradient(90deg,var(--saffron),#fff,var(--green))"></div><h3>Shirdi</h3><div class="note">India · Maharashtra campus</div><div class="price">₹50,000</div><div class="note">Sundays 09:00–15:00 IST</div></div>
+      <div class="fee reveal" data-r="na"><div class="flag" style="background:linear-gradient(90deg,#B22234,#fff,#3C3B6E)"></div><h3>USA</h3><div class="note">City announced per batch</div><div class="price">US$1,000</div><div class="note">Sundays 09:00–15:00 local</div></div>
+      <div class="fee reveal" data-r="na"><div class="flag" style="background:linear-gradient(90deg,#D52B1E,#fff,#D52B1E)"></div><h3>Canada</h3><div class="note">City announced per batch</div><div class="price">US$1,000</div><div class="note">Sundays 09:00–15:00 local</div></div>
+    </div>
+    <p class="includes reveal">Includes all 30 hours, lab mentoring (1 mentor per 10 learners), Demo Day, a mock interview and the certificate. Maximum 30 learners per batch.</p>
+  </div>
+</section>
+
+<!-- ================= SYLLABUS ================= -->
+<section class="block" id="syllabus">
+  <div class="wrap">
+    <div class="sec-head reveal"><div class="kicker">Hour by hour</div><h2>The 30-hour syllabus</h2><p>Pick a Sunday. Every hour has its own dataset and skill set. <span style="background:var(--gold);color:var(--navy);padding:1px 6px;border-radius:4px;font-weight:700">TEACH</span> hours are instructor-led live coding; <span style="background:var(--navy);color:var(--gold);padding:1px 6px;border-radius:4px;font-weight:700">BUILD</span> hours are real-time team project work.</p></div>
+    <div class="tabs reveal" id="tabs"></div>
+    <div id="sunday" class="reveal"></div>
+  </div>
+</section>
+
+<!-- ================= SKILLS ================= -->
+<section class="block alt" id="skills">
+  <div class="wrap">
+    <div class="sec-head reveal"><div class="kicker">After completion</div><h2>94 hands-on skills in 10 clusters</h2><p>Click a cluster to see every skill in it and the hours where you practise it.</p></div>
+    <div class="skills">
+      <div id="sbars" class="reveal"></div>
+      <div class="card skill-detail reveal" id="sdetail"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= JOBS ================= -->
+<section class="block" id="jobs">
+  <div class="wrap">
+    <div class="sec-head reveal"><div class="kicker">Careers</div><h2>16 job roles you can target</h2><p>Filter by project to see which roles each portfolio project proves you can do. Entry-level and junior roles are the realistic first target.</p></div>
+    <div class="filters reveal" id="jfilters"></div>
+    <div class="jobs" id="jobgrid"></div>
+    <div class="where reveal">
+      <div><b>Top AI labs &amp; big tech</b><br>Deep LLM, evaluation and system-design skills from Sundays 3–6.</div>
+      <div><b>Global capability centres</b><br>Hyderabad, Pune and Bengaluru hire AI, RAG and MLOps engineers at scale.</div>
+      <div><b>AI start-ups</b><br>India, USA and Canada: builders who ship end-to-end, trained in every BUILD hour.</div>
+      <div><b>IT services &amp; consulting</b><br>GenAI and agent engineers for client projects (Sundays 3–5).</div>
+      <div><b>Product companies</b><br>Fintech, health, agri and ed-tech need applied ML and vision (Sundays 1–2).</div>
+      <div><b>Research labs</b><br>Research engineers who can reproduce and extend papers (Hours 14, 23–24).</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ROADMAP ================= -->
+<section class="block dark" id="roadmap">
+  <div class="wrap">
+    <div class="sec-head reveal"><div class="kicker">Skill horizon</div><h2>AI skill roadmap 2026 – 2035</h2><p>Where AI skills are likely to move over the next decade, and what this course carries forward.</p></div>
+    <div class="road" id="road"></div>
+    <p class="disclaim">Later periods are projections from current research trends, not certainties.</p>
+  </div>
+</section>
+
+<!-- ================= GITHUB ================= -->
+<section class="block alt" id="github">
+  <div class="wrap">
+    <div class="sec-head reveal"><div class="kicker">Submission policy</div><h2>Submit on GitHub by 18:00, every Sunday</h2><p>One public portfolio repository per learner, used for all six Sundays. Each Sunday's project is tagged and submitted the same day.</p></div>
+    <div class="steps" id="steps"></div>
+    <div class="twocol">
+      <div class="card reveal">
+        <h3 style="color:var(--navy)">Generate your repository name</h3>
+        <div class="namegen">
+          <select id="gCampus"><option value="hyd">Hyderabad</option><option value="sdi">Shirdi</option><option value="usa">USA</option><option value="can">Canada</option></select>
+          <input id="gBatch" value="b01" size="5" aria-label="Batch">
+          <input id="gId" value="AP2601023" size="12" aria-label="Learner ID">
+        </div>
+        <div class="reponame" id="gOut"></div>
+        <button class="btn gold small" style="margin-top:10px" data-copy="gOut">Copy name</button>
+      </div>
+      <div class="reveal">
+        <table>
+          <tr><th>Submitted</th><th>Effect on that project's marks</th></tr>
+          <tr><td>By 18:00 Sunday</td><td>Full marks available</td></tr>
+          <tr><td>18:01 – 23:59 Sunday</td><td>10% deduction</td></tr>
+          <tr><td>Monday – Wednesday</td><td>25% deduction</td></tr>
+          <tr><td>After Wednesday or not tagged</td><td>Not graded</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="code reveal" id="gitcode"><button class="btn gold small copy" data-copy="gitcode">Copy</button><span class="c"># 1. commit as you work (at least 3 meaningful commits in BUILD hours)</span>
+<span class="k">git</span> commit -m "feat(P2): add Grad-CAM visualisation"
+<span class="c"># 2. clean up: run notebooks top to bottom, update requirements.txt and README</span>
+<span class="c"># 3. push</span>
+<span class="k">git</span> push origin main
+<span class="c"># 4. tag the Sunday release</span>
+<span class="k">git</span> tag -a sunday-2 -m "Sunday 2 submission"
+<span class="k">git</span> push origin sunday-2
+<span class="c"># 5. create a GitHub Release from the tag</span>
+<span class="c"># 6. submit the release link + commit hash on the AlgoProfessor form before 18:00</span></div>
+    <div class="twocol">
+      <div class="code reveal" style="margin-top:0">algoprofessor-ai-scientist-&lt;campus&gt;-&lt;batch&gt;-&lt;id&gt;/
+├── README.md            <span class="c"># portfolio index</span>
+├── LICENSE              <span class="c"># MIT or Apache-2.0</span>
+├── .gitignore
+├── P1-churn-intelligence/
+│   ├── README.md        <span class="c"># project report</span>
+│   ├── requirements.txt
+│   ├── notebooks/  src/  results/  docs/
+│   └── data/README.md   <span class="c"># dataset links only</span>
+├── P2-leafdoctor/
+├── P3-minillm/
+├── P4-policygpt/
+├── P5-scholaragent/
+└── P6-capstone/</div>
+      <div class="card reveal">
+        <h3 style="color:var(--navy)">Every project README must include</h3>
+        <div class="chips" style="margin-top:10px">
+          <span class="chip">Problem statement</span><span class="chip">Dataset, source &amp; licence</span><span class="chip">Method + diagram</span>
+          <span class="chip">Results vs baseline</span><span class="chip">How to run</span><span class="chip">Limitations &amp; ethics</span>
+          <span class="chip">AI-assistant use disclosure</span><span class="chip">Author, ID, campus, Sunday</span>
+        </div>
+        <h3 style="color:#A4243B;margin-top:18px">Never commit</h3>
+        <p style="color:var(--muted)">API keys or passwords (use <b>.env</b> + <b>.gitignore</b>), raw datasets or files over 50 MB, personal data of real people, or uncredited code. A leaked key must be revoked at once.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CERTIFICATE ================= -->
+<section class="block" id="certificate">
+  <div class="wrap">
+    <div class="sec-head reveal"><div class="kicker">Certification</div><h2>Preview your certificate</h2><p>Certified at 60% overall with 5 of 6 Sundays attended. Distinction at 85%. Type your details to see your certificate.</p></div>
+    <div class="certwrap">
+      <div class="card form reveal">
+        <label for="cName">Your full name</label><input id="cName" value="Your Name" maxlength="40">
+        <label for="cCampus">Campus</label>
+        <select id="cCampus"><option>Hyderabad</option><option>Shirdi</option><option>USA</option><option>Canada</option></select>
+        <label for="cResult">Result</label>
+        <select id="cResult"><option>Certified</option><option>Certified with Distinction</option></select>
+        <table style="margin-top:18px">
+          <tr><th>Component</th><th>Weight</th></tr>
+          <tr><td>P1–P5 on GitHub by 18:00</td><td>50%</td></tr>
+          <tr><td>Capstone P6 + Demo Day</td><td>30%</td></tr>
+          <tr><td>Mentor &amp; peer reviews</td><td>10%</td></tr>
+          <tr><td>Mock interview</td><td>10%</td></tr>
+        </table>
+      </div>
+      <div class="cert reveal" id="cert">
+        <div class="org">AlgoProfessor</div>
+        <div style="font-size:clamp(.5rem,1vw,.78rem);color:var(--navy3)">AI R&amp;D Solutions · Hyderabad, India</div>
+        <div class="ttl">Certificate of Completion</div>
+        <div style="font-style:italic;font-size:clamp(.6rem,1.2vw,.9rem)">This is to certify that</div>
+        <div class="cname" id="certName">Your Name</div>
+        <div class="body">has successfully completed the 30-hour <b>AlgoProfessor AI Scientist — Hands-On (Level 1)</b> programme, Sunday Edition, and shipped six portfolio projects on GitHub, including one capstone deployed to production.</div>
+        <div class="meta"><div><b>Campus</b><span id="certCampus">Hyderabad</span></div><div><b>Result</b><span id="certResult">Certified</span></div><div><b>Year</b><span id="certYear">2026</span></div></div>
+        <div class="sig l"><b>Dr S Satyanarayana</b><br>Course Director · AlgoProfessor</div>
+        <div class="seal">AI SCIENTIST<br>HANDS-ON<br><span style="font-size:1.6em">L1</span></div>
+        <div class="sig r"><b>Campus Programme Lead</b><br>Lead Mentor</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ENROL ================= -->
+<section class="block alt" id="enrol">
+  <div class="wrap">
+    <div class="sec-head reveal"><div class="kicker">Join a batch</div><h2>Enrol or ask a question</h2><p>Send your details and the AlgoProfessor team will reply with batch dates and venue.</p></div>
+    <div class="enrol">
+      <form class="card form reveal" id="enrolForm">
+        <label for="eName">Full name</label><input id="eName" required>
+        <label for="eEmail">Email</label><input id="eEmail" type="email" required>
+        <label for="ePhone">Phone (with country code)</label><input id="ePhone">
+        <label for="eCampus">Preferred campus</label>
+        <select id="eCampus"><option>Hyderabad (₹50,000)</option><option>Shirdi (₹50,000)</option><option>USA (US$1,000)</option><option>Canada (US$1,000)</option></select>
+        <label for="eBg">Background</label>
+        <select id="eBg"><option>Student (final year)</option><option>Working engineer</option><option>Researcher / faculty</option><option>Founder</option><option>Other</option></select>
+        <label for="eMsg">Message (optional)</label><textarea id="eMsg" rows="3"></textarea>
+        <button class="btn gold" style="margin-top:16px" type="submit">Send enrolment email →</button>
+        <p style="font-size:.85rem;color:var(--muted);margin-top:8px">Opens your email app with a message to cto@algoprofessor.com.</p>
+      </form>
+      <div class="faq reveal">
+        <details open><summary>Do I need prior AI experience?</summary><p>No. You need Python basics. A 4-hour Python primer is sent on enrolment, before Sunday 1.</p></details>
+        <details><summary>What laptop do I need?</summary><p>16 GB RAM is recommended. GPU work runs on Google Colab, Kaggle Notebooks or cloud credits, so a gaming GPU is not needed.</p></details>
+        <details><summary>What if I miss a Sunday?</summary><p>You still submit that Sunday's project on GitHub. Certification needs 5 of 6 Sundays attended.</p></details>
+        <details><summary>Why submit on GitHub every week?</summary><p>Your tagged GitHub repository becomes the portfolio that recruiters and founders look at. The certificate prints its link.</p></details>
+        <details><summary>Will this get me a job at a top AI company?</summary><p>It gives you a strong, portfolio-backed start and the skills top teams test. Offers also depend on practice and work you keep building after the course. A 90-day post-course plan is included.</p></details>
+        <div class="honest"><b>An honest note on outcomes.</b> AlgoProfessor gives mentoring and referrals where it can, but does not guarantee placement.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap cols">
+    <div>
+      <div class="brand" style="margin-bottom:10px"><span class="logo">AP</span><span>AlgoProfessor<small>AI R&amp;D Solutions · Hyderabad</small></span></div>
+      <p><b style="color:#fff">Course Director: Dr S Satyanarayana Ph.D., PDF(AI), FARSC</b><br>Founder, CEO &amp; Chief Agentic AI Scientist · AlgoProfessor AI R&amp;D Solutions, Hyderabad · Creator of AlgoLang</p>
+    </div>
+    <div><h4>Contact</h4><p>Applications: <a href="mailto:cto@algoprofessor.com">cto@algoprofessor.com</a><br>Director: <a href="mailto:ceo@algoprofessor.com">ceo@algoprofessor.com</a><br>Phone: <a href="tel:+916303432833">+91-6303432833</a><br><a href="https://www.algoprofessor.com">www.algoprofessor.com</a></p></div>
+    <div><h4>Resources</h4><p><a href="syllabus/AlgoProfessor_AI_Scientist_Syllabus.pdf">Syllabus PDF</a><br><a href="syllabus/AlgoProfessor_AI_Scientist_Syllabus.tex">LaTeX source</a><br><a href="https://github.com/drssnaiml1-cell/algoprofessor-ai-scientist">GitHub repository</a></p></div>
+  </div>
+  <div class="wrap" style="margin-top:26px;border-top:1px solid #1d2c45;padding-top:16px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+    <span>© 2026 AlgoProfessor AI R&amp;D Solutions. All rights reserved.</span>
+    <span class="tricolour" style="width:90px;height:4px;align-self:center;border-radius:2px"></span>
+  </div>
+</footer>
+<div class="toast" id="toast">Copied</div>
+
+<!-- ================= DATA + UI (plain script: works even if 3D fails) ================= -->
+<script>
+const SUNDAYS=[
+ {n:1,c:'#0F6E7A',t:'Data & Machine Learning Foundations',short:'Data & ML',goal:'Think like a data scientist: frame a business problem, clean data, build and explain a model, track experiments.',
+  hours:[
+  ['TEACH','Scientific Python: NumPy vectorisation, Pandas, exploratory data analysis, missing values, outliers, visual EDA.','UCI Adult Income (48,842 rows)',['NumPy','Pandas','Matplotlib/Seaborn','Data cleaning','EDA reasoning']],
+  ['TEACH','Supervised ML pipeline: train/validation/test, cross-validation, metrics, gradient boosting.','California Housing (20,640 districts)',['scikit-learn Pipelines','k-fold CV','XGBoost/LightGBM','Feature engineering']],
+  ['BUILD','Live project kick-off: customer churn. Frame the business question, define the metric, build a baseline.','IBM Telco Customer Churn (7,043 customers)',['Problem framing','Baseline thinking','F1 / ROC-AUC']],
+  ['BUILD','Improve the model: class imbalance, Optuna hyperparameter search, SHAP explanations for business users.','IBM Telco Customer Churn',['Optuna','Class weighting / SMOTE','SHAP explainability']],
+  ['BUILD','Track experiments in MLflow, publish the repo, 3-minute stakeholder presentation, mentor review.','Telco + own MLflow runs',['MLflow','Git/GitHub workflow','Technical storytelling']]],
+  d:['P1','Churn Intelligence','GitHub repo with notebook, MLflow logs, SHAP report and a one-page business summary.']},
+ {n:2,c:'#A4243B',t:'Deep Learning with PyTorch',short:'Deep Learning',goal:'Write training loops yourself, use transfer learning well, and ship an image model that runs on a phone.',
+  hours:[
+  ['TEACH','Tensors, autograd, the training loop from scratch, MLPs, optimisers, regularisation.','Fashion-MNIST (70,000 images)',['PyTorch core','Autograd','Custom training loops','Debugging loss curves']],
+  ['TEACH','CNNs, data augmentation, transfer learning with ResNet/EfficientNet, GPU and mixed precision.','CIFAR-10 (60,000 images)',['CNN design','Transfer learning','Augmentation','AMP training']],
+  ['BUILD','Live project: crop-disease detector for farmers. Build the data pipeline and splits.','PlantVillage (54,000+ leaf images, 38 classes)',['torchvision datasets','DataLoaders','Stratified splits','Leakage checks']],
+  ['BUILD','Fine-tune EfficientNet/ViT, run error analysis, show Grad-CAM heatmaps.','PlantVillage',['Vision Transformers','Grad-CAM','Error analysis']],
+  ['BUILD','Robustness test on real field photos, INT8 quantisation, ONNX export, model card.','PlantVillage + field photos',['ONNX','Quantisation','Model cards','Distribution shift']]],
+  d:['P2','LeafDoctor','Quantised ONNX model, Grad-CAM gallery and a model card covering where it fails.']},
+ {n:3,c:'#5B3A8E',t:'Transformers & LLM Engineering',short:'Transformers & LLMs',goal:'Understand a GPT from the inside, then fine-tune, evaluate and serve a small open LLM.',
+  hours:[
+  ['TEACH','Self-attention from scratch, positional encoding, BPE tokenisation. Build a mini-GPT in about 200 lines.','Tiny Shakespeare (public domain)',['Attention maths','Tokenisers','GPT internals']],
+  ['TEACH','Hugging Face ecosystem: transformers, datasets, Trainer. Fine-tune an encoder for sentiment.','IMDb Reviews (50,000) / SST-2',['HF Transformers','Tokenisation pipelines','Fine-tuning encoders']],
+  ['BUILD','Live project: instruction-tune a small open LLM (e.g. Qwen2.5-0.5B / SmolLM2) with LoRA/QLoRA.','databricks-dolly-15k',['PEFT','LoRA/QLoRA','Chat templates','GPU memory budgeting']],
+  ['BUILD','Evaluate it: held-out test set, lm-eval-harness, LLM-as-judge and contamination checks.','MMLU subset + held-out Dolly',['LLM evaluation','Benchmark hygiene','Judge-bias awareness']],
+  ['BUILD','Serve with vLLM or Ollama, structured JSON output, latency and cost measurement.','Team prompt suite (100 prompts)',['Inference serving','Structured outputs','Latency/cost engineering']]],
+  d:['P3','MiniLLM','LoRA adapter on Hugging Face Hub, evaluation report, live inference endpoint.']},
+ {n:4,c:'#2E7D32',t:'Embeddings, Retrieval & RAG',short:'Retrieval & RAG',goal:'Build the retrieval systems behind most enterprise AI products, and measure how often they hallucinate.',
+  hours:[
+  ['TEACH','Embeddings and semantic search. Vector databases: FAISS, Chroma, pgvector. ANN indexes.','arXiv Metadata (50k-abstract subset)',['Sentence embeddings','Vector DBs','HNSW / IVF indexing']],
+  ['TEACH','RAG architecture: chunking, hybrid BM25 + dense search, cross-encoder re-ranking, retrieval metrics.','BEIR SciFact',['Hybrid retrieval','Re-rankers','nDCG, Recall@k']],
+  ['BUILD','Live project: policy-document assistant. Ingest and chunk real government PDFs with metadata.','NEP 2020 + UGC/AICTE regulation PDFs',['PDF parsing','Chunking strategy','Metadata filters']],
+  ['BUILD','Q&A API with citations and streaming answers; refuse when the documents have no answer.','Same corpus',['FastAPI','Streaming','Grounded citations','Abstention design']],
+  ['BUILD','Evaluate with RAGAS (faithfulness, answer relevance) against a 100-question golden set.','Team-built golden Q&A set',['RAG evaluation','Hallucination measurement','Regression testing']]],
+  d:['P4','PolicyGPT','Cited Q&A service, RAGAS scorecard and a failure-case log.']},
+ {n:5,c:'#C25E00',t:'Agentic AI Systems',short:'Agentic AI',goal:'Build agents that plan, use tools, check their own work, and stay inside safe limits.',
+  hours:[
+  ['TEACH','Tool use and function calling, the ReAct loop, Model Context Protocol (MCP) servers and clients.','HotpotQA (multi-hop questions)',['Function calling','ReAct prompting','Building MCP tools']],
+  ['TEACH','Multi-agent orchestration with LangGraph: planner, executor and critic; memory; guardrails. Agents-as-functions (AlgoLang preview).','GSM8K (8,500 maths problems)',['LangGraph','Self-critique','Agent memory','Guardrails']],
+  ['BUILD','Live project: AI Research Scientist Agent. Searches papers, reads abstracts, writes a cited literature summary.','arXiv + Semantic Scholar APIs (live)',['API tool integration','Rate limits','Citation tracking']],
+  ['BUILD','Add a sandboxed code-execution agent that re-runs a simple baseline on an open dataset.','UCI dataset chosen by team',['Docker sandboxing','Permission boundaries','Reproducibility']],
+  ['BUILD','Agent evaluation and observability: traces, cost per task, failure taxonomy, human approval steps.','GAIA validation subset',['Agent evals','Tracing (Langfuse/LangSmith)','Cost control','Human-in-the-loop']]],
+  d:['P5','ScholarAgent','Multi-agent research assistant with trace logs and an evaluation table.']},
+ {n:6,c:'#1F4E9C',t:'Production, Responsible AI & Capstone Demo Day',short:'Production & Capstone',goal:'Ship one project to production, audit it for fairness and safety, pitch it, and rehearse interviews.',
+  hours:[
+  ['TEACH','MLOps: Docker, CI/CD with GitHub Actions, model registry, data and concept drift monitoring.','NYC TLC Taxi Trips',['Docker','GitHub Actions','Evidently drift reports','Model registry']],
+  ['TEACH','Responsible AI and ethics: fairness metrics and mitigation, privacy, LLM red-teaming, EU AI Act and India DPDP Act 2023 basics.','UCI Adult + TruthfulQA',['Fairlearn','Bias mitigation','Red-team playbooks','AI governance']],
+  ['BUILD','Capstone hardening: pick P1–P5, add tests, monitoring and a fairness/safety audit, deploy to cloud.',"Learner's capstone dataset",['Cloud deployment','Testing','Audit documentation']],
+  ['BUILD','Demo Day: 7-minute pitch to a panel of industry engineers and start-up founders.','Live capstone demo',['Product thinking','Technical pitch','Handling hard questions']],
+  ['BUILD','Career Lab: mock interviews (ML system design, coding, LLM depth), CV/GitHub/LinkedIn review, start-up clinic.','Interview question bank',['Interview performance','Portfolio positioning','Founder basics']]],
+  d:['P6','Capstone in Production','Live URL, CI badge, audit report, pitch deck, mock-interview feedback sheet.']}
+];
+const SKILLS=[
+ ['Programming & Maths',10,'#0F6E7A','Hours 1–6',['Python 3','NumPy','Pandas','Jupyter','Git/GitHub','Linear algebra for ML','Probability & statistics','Gradient descent','Vectorised code','Debugging']],
+ ['Data & Classical ML',10,'#0F6E7A','Hours 1–5',['EDA','Data cleaning','Feature engineering','scikit-learn pipelines','Cross-validation','XGBoost/LightGBM','Imbalanced data','Optuna tuning','SHAP explainability','MLflow tracking']],
+ ['Deep Learning & Vision',11,'#A4243B','Hours 6–10',['PyTorch','Autograd','Custom training loops','CNNs','Transfer learning','Vision Transformers','Augmentation','Mixed precision','Grad-CAM','Quantisation','ONNX export']],
+ ['LLM & Generative AI',10,'#5B3A8E','Hours 11–15',['Self-attention','BPE tokenisers','GPT internals','HF Transformers','LoRA/QLoRA','Chat templates','Prompt engineering','Structured outputs','vLLM/Ollama serving','LLM evaluation']],
+ ['Retrieval & RAG',11,'#2E7D32','Hours 16–20',['Embeddings','FAISS','Chroma','pgvector','HNSW indexes','BM25 hybrid search','Re-rankers','Chunking strategy','PDF parsing','Citation grounding','RAGAS evaluation']],
+ ['Agentic AI',11,'#C25E00','Hours 21–25',['Function calling','ReAct','Model Context Protocol','LangGraph','Planner–executor–critic','Agent memory','Guardrails','Sandboxed code execution','Tracing','Agent evaluation','Human-in-the-loop']],
+ ['MLOps & Cloud',8,'#1F4E9C','Hours 26, 28',['FastAPI','Docker','GitHub Actions CI/CD','Model registry','Drift monitoring','Cloud deployment','Testing','Latency & cost tracking']],
+ ['Responsible AI & Ethics',8,'#FF9933','Hour 27',['Fairness metrics','Bias mitigation','Privacy by design','LLM red-teaming','Hallucination control','Model cards','AI audit reports','EU AI Act & DPDP Act basics']],
+ ['Research',7,'#138808','Hours 14, 23–24',['Reading papers fast','Literature review','Reproducing baselines','Experiment design','Benchmark hygiene','Ablation thinking','Technical writing']],
+ ['Professional & Founder',8,'#C9A227','Hours 5, 29–30',['Problem framing','Stakeholder storytelling','Product thinking','Pitching to founders','Code review','Teamwork','Portfolio branding','Interview performance']]
+];
+const JOBS=[
+ ['AI Engineer','Build AI features into products using LLMs, RAG and agents.',['P3','P4','P5']],
+ ['Machine Learning Engineer','Train, tune and deploy ML models at scale.',['P1','P2','P6']],
+ ['LLM / GenAI Engineer','Fine-tune, evaluate and serve language models.',['P3']],
+ ['Agentic AI Engineer','Design multi-agent systems that use tools safely.',['P5']],
+ ['RAG / Search Engineer','Build enterprise search and document Q&A.',['P4']],
+ ['Forward Deployed Engineer','Ship AI solutions on-site with enterprise customers.',['P4','P6']],
+ ['Data Scientist','Turn business data into models and decisions.',['P1']],
+ ['Computer Vision Engineer','Build image and video recognition systems.',['P2']],
+ ['MLOps Engineer','Automate training, deployment and monitoring.',['P6']],
+ ['AI Research Engineer','Turn research ideas into working, tested code.',['P3','P5']],
+ ['Applied Scientist (junior)','Design experiments and new models for products.',['P3','P4']],
+ ['Responsible AI Analyst','Audit models for bias, safety and compliance.',['P6']],
+ ['AI Product Engineer','Build full-stack AI apps that users love.',['P4','P6']],
+ ['AI Solutions Architect (junior)','Design AI systems for client problems.',['P4','P5','P6']],
+ ['AI Trainer / Educator','Teach and mentor AI teams in companies and colleges.',['P6']],
+ ['AI Start-up Founder','Turn a capstone into a product and a company.',['P6']]
+];
+const PCOL={P1:'#0F6E7A',P2:'#A4243B',P3:'#5B3A8E',P4:'#2E7D32',P5:'#C25E00',P6:'#1F4E9C'};
+const ROAD=[
+ ['2026–27','Agentic AI & LLM engineering','Agents and MCP tools, RAG, LoRA fine-tuning, LLM and agent evaluation, inference cost control, AI security basics.','AI Engineer · Agent Engineer · Forward Deployed Engineer · LLM Ops',true],
+ ['2028–29','Multimodal & embodied AI','Vision-language-action models, real-time speech agents, video understanding, robotics foundation models, sim-to-real.','Multimodal ML Engineer · Robotics AI Engineer · Voice AI Engineer'],
+ ['2030–31','AI for science & autonomous research','AI-scientist agents that design and run experiments, scientific simulation, protein and materials modelling, causal inference.','AI Research Scientist · Computational Scientist · AI-for-Science Lead'],
+ ['2032–33','Efficient, edge & new-compute AI','On-device models, energy-aware training, neuromorphic and quantum-classical hybrid methods, federated learning.','Edge AI Engineer · Green AI Engineer · Quantum ML Researcher'],
+ ['2034–35','Trustworthy advanced AI & governance','Interpretability, alignment and safety evaluation, AI auditing and certification, global AI regulation, human–AI teams.','AI Safety Researcher · AI Auditor · Chief AI Officer · AI Policy Advisor']
+];
+const STEPS=[
+ ['Commit as you work','At least 3 meaningful commits during BUILD hours. One big commit at 17:59 is not accepted as evidence.'],
+ ['Clean up','Run notebooks top to bottom, remove dead code, update requirements.txt and the README.'],
+ ['Push to main','git push origin main — your work is now on GitHub.'],
+ ['Tag the release','git tag -a sunday-n, then push the tag. One tag per Sunday.'],
+ ['Create a GitHub Release','Publish a Release from the tag; attach slides or the report PDF if any.'],
+ ['Submit before 18:00','Send the release link and commit hash on the AlgoProfessor submission form.']
+];
+
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+/* ---- syllabus tabs ---- */
+function renderSunday(i){
+  const S=SUNDAYS[i];
+  $$('.tab').forEach((t,k)=>{t.classList.toggle('on',k===i);t.style.background=k===i?SUNDAYS[k].c:'';});
+  const start=(S.n-1)*5;
+  $('#sunday').innerHTML=`<div class="sunday-head" style="background:${S.c}"><div><h3>Sunday ${S.n} — ${esc(S.t)}</h3><div class="goal">${esc(S.goal)}</div></div><div style="font-size:1.1rem;font-weight:700;color:#fff">Hours ${start+1}–${start+5}</div></div>
+  <div class="hours">${S.hours.map((h,k)=>`<div class="hour"><div class="hnum"><b>${start+k+1}</b><span class="tag ${h[0]}">${h[0]}</span></div>
+   <div><h4>${esc(h[1])}</h4><div class="chips"><span class="chip ds">▣ ${esc(h[2])}</span>${h[3].map(x=>`<span class="chip sk">${esc(x)}</span>`).join('')}</div></div></div>`).join('')}
+   <div class="deliv"><b>Deliverable ${S.d[0]}: <i>${esc(S.d[1])}</i></b> — ${esc(S.d[2])}<br><span class="dl">GitHub deadline: 18:00 local time, Sunday ${S.n}</span> · push, tag <b>sunday-${S.n}</b>, submit the release link.</div></div>`;
+}
+$('#tabs').innerHTML=SUNDAYS.map((S,i)=>`<button class="tab" data-i="${i}">Sunday ${S.n}<small>${esc(S.short)}</small></button>`).join('');
+$$('.tab').forEach(b=>b.onclick=()=>renderSunday(+b.dataset.i));
+renderSunday(0);
+addEventListener('keydown',e=>{ if(!$('#syllabus').matches(':hover'))return; const cur=$$('.tab').findIndex(t=>t.classList.contains('on'));
+  if(e.key==='ArrowRight')renderSunday(Math.min(5,cur+1)); if(e.key==='ArrowLeft')renderSunday(Math.max(0,cur-1)); });
+
+/* ---- skills ---- */
+$('#sbars').innerHTML=SKILLS.map((s,i)=>`<div class="sbar" data-i="${i}" tabindex="0"><div class="lbl"><span>${esc(s[0])}</span><span>${s[1]}</span></div><div class="track"><div class="fill" style="background:${s[2]}" data-w="${s[1]/11*100}"></div></div></div>`).join('');
+function showSkill(i){const s=SKILLS[i];$$('.sbar').forEach((b,k)=>b.classList.toggle('on',k===i));
+  $('#sdetail').style.borderTopColor=s[2];
+  $('#sdetail').innerHTML=`<h3>${esc(s[0])}</h3><div class="hrs">${s[1]} skills · practised in ${s[3]}</div><div class="chips">${s[4].map(x=>`<span class="chip sk">${esc(x)}</span>`).join('')}</div>`;}
+$$('.sbar').forEach(b=>{b.onclick=()=>showSkill(+b.dataset.i);b.onkeydown=e=>{if(e.key==='Enter')showSkill(+b.dataset.i)}});
+showSkill(0);
+
+/* ---- jobs ---- */
+$('#jobgrid').innerHTML=JOBS.map(j=>`<div class="job reveal" data-p="${j[2].join(' ')}" style="border-left-color:${PCOL[j[2][0]]}"><h4>${esc(j[0])}</h4><p>${esc(j[1])}</p><div class="proof">${j[2].map(p=>`<span class="pchip" style="background:${PCOL[p]}">${p}</span>`).join('')}</div></div>`).join('');
+$('#jfilters').innerHTML=['All','P1','P2','P3','P4','P5','P6'].map((p,i)=>`<button class="${i?'':'on'}" data-p="${p}">${p==='All'?'All 16 roles':p+' · '+SUNDAYS[+p[1]-1].d[1]}</button>`).join('');
+$$('#jfilters button').forEach(b=>b.onclick=()=>{ $$('#jfilters button').forEach(x=>x.classList.toggle('on',x===b));
+  $$('.job').forEach(j=>j.classList.toggle('hide',b.dataset.p!=='All'&&!j.dataset.p.includes(b.dataset.p))); });
+
+/* ---- roadmap & steps ---- */
+$('#road').innerHTML=ROAD.map(r=>`<div class="wave reveal"><span class="dot"></span><div class="yr">${r[0]}${r[4]?'<span class="badge-now">Covered in this course</span>':''}</div><h4>${esc(r[1])}</h4><p>${esc(r[2])}</p><div class="roles">${esc(r[3])}</div></div>`).join('');
+$('#steps').innerHTML=STEPS.map((s,i)=>`<div class="step reveal"><span class="n">${i+1}</span><h4>${esc(s[0])}</h4><p>${esc(s[1])}</p></div>`).join('');
+
+/* ---- fees toggle ---- */
+$$('#region button').forEach(b=>b.onclick=()=>{ $$('#region button').forEach(x=>x.classList.toggle('on',x===b));
+  $$('.fee').forEach(f=>f.classList.toggle('dim',b.dataset.r!=='all'&&f.dataset.r!==b.dataset.r)); });
+
+/* ---- repo name generator ---- */
+function gen(){ const id=$('#gId').value.trim().replace(/[^A-Za-z0-9]/g,''), b=$('#gBatch').value.trim().toLowerCase().replace(/[^a-z0-9]/g,'');
+  $('#gOut').textContent=`algoprofessor-ai-scientist-${$('#gCampus').value}-${b||'b01'}-${id||'AP0000000'}`; }
+['#gCampus','#gBatch','#gId'].forEach(s=>$(s).addEventListener('input',gen)); gen();
+
+/* ---- copy ---- */
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600);}
+$$('[data-copy]').forEach(b=>b.onclick=()=>{ const el=$('#'+b.dataset.copy); let txt=el.innerText.replace(/^Copy\s*/,'');
+  (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast('Copied to clipboard')).catch(()=>toast('Select and copy manually')); });
+
+/* ---- certificate preview ---- */
+function cert(){ $('#certName').textContent=$('#cName').value.trim()||'Your Name'; $('#certCampus').textContent=$('#cCampus').value; $('#certResult').textContent=$('#cResult').value; }
+['#cName','#cCampus','#cResult'].forEach(s=>$(s).addEventListener('input',cert));
+$('#certYear').textContent=new Date().getFullYear();
+
+/* ---- enrol mailto ---- */
+$('#enrolForm').onsubmit=e=>{ e.preventDefault();
+  const body=`Name: ${$('#eName').value}\nEmail: ${$('#eEmail').value}\nPhone: ${$('#ePhone').value}\nPreferred campus: ${$('#eCampus').value}\nBackground: ${$('#eBg').value}\n\n${$('#eMsg').value}`;
+  location.href=`mailto:cto@algoprofessor.com?cc=ceo@algoprofessor.com&subject=${encodeURIComponent('Enrolment: AI Scientist Hands-On — '+$('#eCampus').value)}&body=${encodeURIComponent(body)}`; };
+
+/* ---- typed roles ---- */
+(()=>{ const roles=JOBS.map(j=>j[0]).slice(0,8); let i=0,c=0,del=false; const el=$('#typed');
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  (function step(){ const w=roles[i]; c+=del?-1:1; el.textContent=w.slice(0,c);
+    if(!del&&c===w.length){del=true;return setTimeout(step,1500);} if(del&&c===0){del=false;i=(i+1)%roles.length;}
+    setTimeout(step,del?40:80); })(); })();
+
+/* ---- live clock & countdown ---- */
+function nextDeadline(now){ const d=new Date(now); d.setHours(18,0,0,0); const add=(7-d.getDay())%7; d.setDate(d.getDate()+add); if(d<=now)d.setDate(d.getDate()+7); return d; }
+function live(){ const now=new Date(), mins=now.getHours()*60+now.getMinutes(), sun=now.getDay()===0;
+  $$('#daybar div').forEach(b=>b.classList.toggle('now',sun&&mins>=+b.dataset.s&&mins<+b.dataset.e));
+  let msg; if(!sun){const days=(7-now.getDay())%7; msg=`Next class: Sunday 09:00 (in ${days} day${days>1?'s':''}). Today is a self-study day.`;}
+  else if(mins<540)msg='Class starts at 09:00 today. Bring your laptop charged.';
+  else if(mins<900){const b=$$('#daybar div').find(x=>mins>=+x.dataset.s&&mins<+x.dataset.e); msg=`<em>Live now:</em> ${b?b.innerText.replace('\n',' — '):'class in progress'}`;}
+  else if(mins<1080)msg='<em>Submission window open:</em> clean up, push and tag before 18:00.';
+  else msg='Submissions closed for today. Mentors review before next Sunday.';
+  $('#status').innerHTML=msg;
+  const dl=nextDeadline(now), diff=Math.max(0,dl-now);
+  $('#cdD').textContent=Math.floor(diff/864e5); $('#cdH').textContent=Math.floor(diff/36e5)%24;
+  $('#cdM').textContent=Math.floor(diff/6e4)%60; $('#cdS').textContent=Math.floor(diff/1e3)%60;
+  $('#cdNote').textContent=`${dl.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})}, 18:00 your local time (${Intl.DateTimeFormat().resolvedOptions().timeZone}).`;
+}
+live(); setInterval(live,1000);
+
+/* ---- reveal, counters, skill bars, nav, progress ---- */
+const io=new IntersectionObserver(es=>es.forEach(e=>{ if(!e.isIntersecting)return; e.target.classList.add('in');
+  if(e.target.id==='sbars')$$('.fill').forEach(f=>f.style.width=f.dataset.w+'%'); io.unobserve(e.target); }),{threshold:.12});
+$$('.reveal').forEach(el=>io.observe(el));
+$$('[data-count]').forEach(el=>{ const target=+el.dataset.count, t0=performance.now();
+  (function f(t){ const p=Math.min(1,(t-t0)/1600); el.textContent=Math.round(target*(1-Math.pow(1-p,3))); if(p<1)requestAnimationFrame(f); })(t0); });
+const secs=$$('section[id],header[id]');
+addEventListener('scroll',()=>{ const y=scrollY; $('#nav').classList.toggle('solid',y>40);
+  $('#progress').style.width=(y/(document.documentElement.scrollHeight-innerHeight)*100)+'%';
+  let cur=''; secs.forEach(s=>{if(s.offsetTop-120<=y)cur=s.id;}); $$('.links a').forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+cur)); },{passive:true});
+$('#burger').onclick=()=>$('#links').classList.toggle('open');
+$$('.links a').forEach(a=>a.addEventListener('click',()=>$('#links').classList.remove('open')));
+</script>
+
+<!-- ================= 3D HERO (module; page works without it) ================= -->
+<script type="module">
+import * as THREE from 'three';
+const canvas=document.getElementById('webgl'), hero=document.querySelector('.hero');
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches, weak=innerWidth<768||(navigator.hardwareConcurrency||8)<=4;
+let renderer; try{ renderer=new THREE.WebGLRenderer({canvas,antialias:!weak,alpha:true}); }catch(e){ throw e; }
+renderer.setPixelRatio(Math.min(devicePixelRatio,weak?1.5:2));
+const scene=new THREE.Scene(), camera=new THREE.PerspectiveCamera(45,1,0.1,100);
+camera.position.set(0,0,9);
+function size(){ const w=hero.clientWidth,h=hero.clientHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+size(); addEventListener('resize',size);
+scene.add(new THREE.AmbientLight(0xffffff,.5));
+const key=new THREE.DirectionalLight(0xffe2a0,2.4); key.position.set(4,5,6); scene.add(key);
+const rim=new THREE.PointLight(0x138808,25,30); rim.position.set(-5,-3,2); scene.add(rim);
+const rim2=new THREE.PointLight(0xff9933,25,30); rim2.position.set(5,3,-2); scene.add(rim2);
+
+const group=new THREE.Group(); scene.add(group);
+function place(){ const wide=innerWidth>900; group.position.set(wide?4.4:0,wide?0:-.6,0); group.scale.setScalar(wide?.8:.75); }
+place(); addEventListener('resize',place);
+/* AI core: gold icosahedron + wireframe shell */
+const core=new THREE.Mesh(new THREE.IcosahedronGeometry(1.25,1),new THREE.MeshStandardMaterial({color:0xC9A227,metalness:.85,roughness:.28,flatShading:true}));
+group.add(core);
+const shell=new THREE.Mesh(new THREE.IcosahedronGeometry(1.9,1),new THREE.MeshBasicMaterial({color:0xE8C860,wireframe:true,transparent:true,opacity:.35}));
+group.add(shell);
+/* neural constellation on a sphere: 6 colour bands = 6 Sundays */
+const SC=[0x0F6E7A,0xA4243B,0x5B3A8E,0x2E7D32,0xC25E00,0x1F4E9C];
+const N=weak?90:180, pts=[], R=3.3;
+const nodeGeo=new THREE.SphereGeometry(.055,10,10);
+const nodes=new THREE.InstancedMesh(nodeGeo,new THREE.MeshBasicMaterial(),N);
+const m=new THREE.Matrix4(), col=new THREE.Color();
+for(let i=0;i<N;i++){ const y=1-(i/(N-1))*2, r=Math.sqrt(1-y*y), th=i*2.39996;
+  const p=new THREE.Vector3(Math.cos(th)*r,y,Math.sin(th)*r).multiplyScalar(R*(0.85+Math.random()*.3)); pts.push(p);
+  m.setPosition(p); nodes.setMatrixAt(i,m); nodes.setColorAt(i,col.setHex(i%7===0?0xffffff:SC[Math.floor(i/N*6)])); }
+group.add(nodes);
+const lp=[]; for(let i=0;i<N;i++)for(let j=i+1;j<N;j++) if(pts[i].distanceTo(pts[j])<1.15) lp.push(pts[i].x,pts[i].y,pts[i].z,pts[j].x,pts[j].y,pts[j].z);
+const lg=new THREE.BufferGeometry(); lg.setAttribute('position',new THREE.Float32BufferAttribute(lp,3));
+const links=new THREE.LineSegments(lg,new THREE.LineBasicMaterial({color:0xC9A227,transparent:true,opacity:.28})); group.add(links);
+/* signal pulses travelling core -> nodes */
+const PULSES=weak?14:30, pulse=new THREE.InstancedMesh(new THREE.SphereGeometry(.07,8,8),new THREE.MeshBasicMaterial({color:0xffe9a6}),PULSES);
+const pdata=[...Array(PULSES)].map(()=>({t:Math.random(),to:pts[Math.floor(Math.random()*N)],s:.25+Math.random()*.35}));
+group.add(pulse);
+/* orbit rings in tricolour */
+[[0xFF9933,2.45,.35],[0xffffff,2.6,-.5],[0x138808,2.75,1.1]].forEach(([c,r,tilt])=>{ const ring=new THREE.Mesh(new THREE.TorusGeometry(r,.012,8,160),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.55}));
+  ring.rotation.x=Math.PI/2+tilt; ring.userData.spin=.1+Math.random()*.15; group.add(ring); });
+/* starfield */
+const SN=weak?600:1400, sp=new Float32Array(SN*3); for(let i=0;i<SN*3;i++) sp[i]=(Math.random()-.5)*40;
+const sg=new THREE.BufferGeometry(); sg.setAttribute('position',new THREE.BufferAttribute(sp,3));
+const stars=new THREE.Points(sg,new THREE.PointsMaterial({size:.035,color:0xF6EBC4,transparent:true,opacity:.7})); scene.add(stars);
+
+const st={mx:0,my:0,tx:0,ty:0,scroll:0};
+addEventListener('pointermove',e=>{st.tx=e.clientX/innerWidth-.5;st.ty=e.clientY/innerHeight-.5;},{passive:true});
+addEventListener('scroll',()=>{st.scroll=Math.min(1,scrollY/innerHeight);},{passive:true});
+const clock=new THREE.Clock(); let visible=true;
+new IntersectionObserver(([e])=>{visible=e.isIntersecting;if(visible)loop();}).observe(hero);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&visible){clock.getDelta();loop();} });
+const tmp=new THREE.Vector3(); let raf=0;
+function loop(){ cancelAnimationFrame(raf); if(!visible||document.hidden)return;
+  const dt=Math.min(clock.getDelta(),.05), t=clock.elapsedTime;
+  st.mx+=(st.tx-st.mx)*.05; st.my+=(st.ty-st.my)*.05;
+  if(!reduce){ group.rotation.y+=dt*.12; core.rotation.x+=dt*.3; core.rotation.y+=dt*.2; shell.rotation.y-=dt*.08;
+    group.children.forEach(o=>{ if(o.userData.spin)o.rotation.z+=dt*o.userData.spin; });
+    stars.rotation.y+=dt*.008;
+    pdata.forEach((p,i)=>{ p.t+=dt*p.s; if(p.t>1){p.t=0;p.to=pts[Math.floor(Math.random()*N)];}
+      tmp.copy(p.to).multiplyScalar(p.t); m.makeScale(1-p.t*.5,1-p.t*.5,1-p.t*.5).setPosition(tmp); pulse.setMatrixAt(i,m); });
+    pulse.instanceMatrix.needsUpdate=true;
+    core.scale.setScalar(1+Math.sin(t*2)*.04); }
+  group.rotation.x=st.my*.35; camera.position.x=st.mx*.8; camera.position.y=-st.my*.6+st.scroll*1.5;
+  camera.position.z=9+st.scroll*3; camera.lookAt(0,0,0);
+  renderer.render(scene,camera); raf=requestAnimationFrame(loop); }
+loop();
+</script>
+</body>
+</html>
