@@ -2,7 +2,7 @@
 Renders (1) sunday-0N/notes/S0N_Homework.tex, included at the end of the notes, and (2) sunday-0N/HOMEWORK.md."""
 import pathlib, re
 
-ROOT = pathlib.Path("/home/claude/build")
+ROOT = pathlib.Path(__file__).resolve().parent.parent   # repository root
 DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
 WEEKS = {
