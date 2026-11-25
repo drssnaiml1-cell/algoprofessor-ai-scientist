@@ -16,7 +16,7 @@
 
 <img src="assets/cover.png" width="420" alt="Syllabus cover"/>
 
-🌐 **[Visit the course website](https://drssnaiml1-cell.github.io/algoprofessor-ai-scientist/)** · 📄 **[Download the full syllabus (PDF)](syllabus/AlgoProfessor_AI_Scientist_Syllabus.pdf)** · 🧾 **[LaTeX source](syllabus/AlgoProfessor_AI_Scientist_Syllabus.tex)**
+🌐 **[Visit the course website](https://drssnaiml1-cell.github.io/algoprofessor-ai-scientist/)** · ✨ **[Interactive syllabus page](https://drssnaiml1-cell.github.io/algoprofessor-ai-scientist/syllabus.html)** · 📄 **[Download the full syllabus (PDF)](syllabus/AlgoProfessor_AI_Scientist_Syllabus.pdf)** · 🧾 **[LaTeX source](syllabus/AlgoProfessor_AI_Scientist_Syllabus.tex)**
 
 🎬 **[Course introduction deck (PDF, animated Beamer)](course-intro/AlgoProfessor_AI_Scientist_Course_Intro.pdf)** · [LaTeX source](course-intro/AlgoProfessor_AI_Scientist_Course_Intro.tex) — why this course matters, how it works, what you walk out with
 
