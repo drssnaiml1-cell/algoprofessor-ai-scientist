@@ -8,128 +8,406 @@
 \begin{document}
 \begin{frame}[plain]\titlepage\end{frame}
 
+\begin{frame}{Learning objectives}
+\begin{columns}[T]
+\column{0.55\textwidth}
+By 18:00 today you can:
+\begin{enumerate}
+\item Define embeddings and compute cosine similarity
+\item Explain exact and approximate vector search (IVF, HNSW)
+\item Score documents with BM25 and fuse rankings
+\item Measure retrieval with Recall@k, MRR and nDCG
+\item Build a cited RAG answerer that knows when to abstain
+\item Evaluate it with a dev set and an untouched golden set
+\end{enumerate}
+\column{0.4\textwidth}
+\begin{bdef}[Prerequisites]
+Sunday 3: tokens, embeddings, encoders, language models.
+\end{bdef}
+\begin{bapp}[Project of the day]
+\textbf{P4 --- PolicyGPT}: answers questions about policy documents with page citations, and says ``I can't find this'' when it should.
+\end{bapp}
+\end{columns}
+\end{frame}
+
+\legendframe
+
 \begin{frame}{Today at a glance}
 \renewcommand{\arraystretch}{1.25}
 \begin{tabularx}{\linewidth}{c c X l}
 \toprule
 \textbf{Hour} & \textbf{Mode} & \textbf{Focus} & \textbf{Dataset}\\
 \midrule
-16 & \teachtag & Embeddings, FAISS (Flat, IVF, HNSW) & \ds{SST-2 sentences}\\
-17 & \teachtag & Hybrid BM25 + dense, re-ranking, metrics & \ds{TruthfulQA}\\
-18 & \buildtag & PDF ingestion, chunking with page metadata & \ds{Syllabus PDF}\\
-19 & \buildtag & Cited Q\&A API with abstention & \ds{Syllabus PDF}\\
+16 & \teachtag & Embeddings, cosine similarity, FAISS (Flat, IVF, HNSW) & \ds{SST-2 sentences}\\
+17 & \teachtag & BM25, hybrid fusion, re-ranking, retrieval metrics & \ds{TruthfulQA}\\
+18 & \buildtag & RAG architecture, PDF ingestion, chunking & \ds{Syllabus PDF}\\
+19 & \buildtag & Grounded, cited answers with abstention & \ds{Syllabus PDF}\\
 20 & \buildtag & Dev set to tune, golden set to test & \ds{8 + 25 questions}\\
 \bottomrule
 \end{tabularx}
-\vspace{6pt}
-\begin{block}{By 18:00 today}
-P4 --- PolicyGPT on GitHub, tagged \texttt{sunday-4}.
-\end{block}
 \end{frame}
 
-\hourslide{16}{TEACH}{Embeddings and vector search with FAISS}{SST-2 sentences (8,741)}{Embeddings, vector databases, ANN indexing}
+%% =====================================================================
+\hourslide{16}{TEACH}{Embeddings and vector search}{SST-2 sentences (8,741)}{Embeddings, vector databases, ANN indexing}
 
-\begin{frame}[fragile]{Exact vs approximate search}
+\begin{frame}{Embeddings and similarity}
+\begin{bdef}[Embedding]
+A vector representation of text in which texts with similar meaning lie close together. Search then becomes ``find the nearest vectors''.
+\end{bdef}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\begin{bmath}[Cosine similarity]
+$\cos(u,v)=\dfrac{u\cdot v}{\lVert u\rVert\,\lVert v\rVert}\in[-1,1]$\\[3pt]
+For unit vectors: $\cos(u,v)=u^\top v$ (a dot product)
+\end{bmath}
+\begin{bmath}[LSA embeddings]
+TF-IDF matrix $X\approx U_k\Sigma_kV_k^\top$ (truncated SVD); keep $k=256$ dimensions.
+\end{bmath}
+\column{0.44\textwidth}
+\begin{bex}[Worked example]
+$u=(0.6,0.8)$, $v=(0.8,0.6)$: $\cos=0.48+0.48=0.96$ --- very similar. $w=(-0.8,0.6)$: $\cos(u,w)=0$ --- unrelated.
+\end{bex}
+\begin{bdef}[Sentence embeddings]
+Neural encoders (e.g.\ \texttt{all-MiniLM-L6-v2}) give better meaning-vectors than LSA; the search code is the same.
+\end{bdef}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Exact and approximate nearest-neighbour search}
+\begin{columns}[T]
+\column{0.32\textwidth}
+\begin{bdef}[Flat (exact)]
+Compare the query with every vector: $O(nd)$ per query. Perfect recall, slow at millions.
+\end{bdef}
+\column{0.32\textwidth}
+\begin{balgo}[IVF]
+\begin{algorithmic}[1]
+\State $k$-means: $n_{list}$ centroids
+\State assign vectors to nearest centroid
+\State query: pick $n_{probe}$ closest lists
+\State search only those lists
+\end{algorithmic}
+\end{balgo}
+\column{0.32\textwidth}
+\begin{balgo}[HNSW]
+\begin{algorithmic}[1]
+\State build layered proximity graph
+\State start at top layer entry point
+\State greedy walk to closer neighbours
+\State descend a layer; repeat
+\end{algorithmic}
+\end{balgo}
+\end{columns}
+\begin{bmath}[Recall of approximate search]
+$\mathrm{Recall@10}=\frac{|\text{ANN top-10}\cap\text{exact top-10}|}{10}$
+\end{bmath}
+\end{frame}
+
+\begin{frame}[fragile]{FAISS in code, result and products}
 \begin{columns}[T]
 \column{0.5\textwidth}
+\begin{bcode}
 \begin{lstlisting}
-flat = faiss.IndexFlatIP(d)
-ivf  = faiss.IndexIVFFlat(q, d, 64, IP)
-ivf.nprobe = 6
+E = normalize(svd.fit_transform(X_tfidf))
+IP = faiss.METRIC_INNER_PRODUCT
+flat = faiss.IndexFlatIP(d); flat.add(E)
+ivf = faiss.IndexIVFFlat(
+        faiss.IndexFlatIP(d), d, 64, IP)
+ivf.train(E); ivf.add(E); ivf.nprobe = 6
 hnsw = faiss.IndexHNSWFlat(d, 32, IP)
+hnsw.add(E); D, I = hnsw.search(q, 3)
 \end{lstlisting}
-Unit vectors: cosine $=u^\top v$
+\end{bcode}
+\begin{bex}[Nearest neighbour found]
+``a heartwarming film for the whole family'' $\rightarrow$ ``a film that will enthrall the whole family''
+\end{bex}
 \column{0.46\textwidth}
-\begin{exampleblock}{500 queries, top-10}
+\begin{bres}
 \begin{tabular}{lrr}
-Index & Recall & $\mu$s/q\\
+Index & Recall@10 & $\mu$s/query\\
 Flat & 1.000 & 465.6\\
 IVF & 0.842 & 47.0\\
 HNSW & 0.980 & 43.6\\
-\end{tabular}
-\end{exampleblock}
-\small ``a heartwarming film for the whole family'' $\rightarrow$ ``a film that will enthrall the whole family''
+\end{tabular}\\[1pt]
+\footnotesize Timings depend on the machine and its load.
+\end{bres}
+\begin{bapp}
+Semantic product search, ``more like this'' recommendations, duplicate detection. Vector databases: FAISS, Milvus, Pinecone, Weaviate, Chroma, pgvector.
+\end{bapp}
 \end{columns}
 \end{frame}
 
-\hourslide{17}{TEACH}{Hybrid retrieval, re-ranking, metrics}{TruthfulQA (790 questions + look-alike false answers)}{BM25 + dense hybrid, re-rankers, Recall@k, MRR, nDCG}
+%% =====================================================================
+\hourslide{17}{TEACH}{BM25, hybrid retrieval, re-ranking and metrics}{TruthfulQA (790 questions + look-alike false answers)}{BM25, fusion, re-rankers, Recall@k, MRR, nDCG}
 
-\begin{frame}{Retrieval finds matches, not truth}
+\begin{frame}{BM25: the keyword workhorse}
+\begin{bdef}[BM25]
+A ranking function that rewards query words appearing in a document, with diminishing returns for repeats, more weight for rare words, and a penalty for very long documents.
+\end{bdef}
 \begin{columns}[T]
-\column{0.5\textwidth}
-\renewcommand{\arraystretch}{1.15}
-\begin{tabular}{lrrr}
-\toprule
- & R@1 & MRR & Misc@1\\
-\midrule
-BM25 & 0.377 & 0.567 & \alert{0.471}\\
-Dense & 0.384 & 0.547 & 0.381\\
-Hybrid & \textbf{0.462} & \textbf{0.609} & \textbf{0.362}\\
-\bottomrule
-\end{tabular}\\[6pt]
-\small $\mathrm{RRF}(d)=\sum_r \frac{1}{60+\mathrm{rank}_r(d)}$\\
-\small Re-ranker (held-out half): 0.468 $\rightarrow$ 0.423 \alert{worse}
-\column{0.48\textwidth}\centering\includegraphics[width=\linewidth]{s4_retrieval.png}
+\column{0.6\textwidth}
+\begin{bmath}[Formula]
+$\mathrm{BM25}(q,d)=\sum_{t\in q}\mathrm{IDF}(t)\,\dfrac{f(t,d)\,(k_1+1)}{f(t,d)+k_1\big(1-b+b\,\frac{|d|}{\overline{|d|}}\big)}$\\[3pt]
+$\mathrm{IDF}(t)=\ln\!\Big(\frac{N-n_t+0.5}{n_t+0.5}+1\Big)$, \; typically $k_1\approx1.2$--$2$, $b=0.75$
+\end{bmath}
+\column{0.36\textwidth}
+\begin{bex}[Intuition]
+``watermelon seeds'': \emph{watermelon} is rare $\Rightarrow$ high IDF; \emph{seeds} common $\Rightarrow$ lower. A 10th repeat of a word adds far less than the 1st.
+\end{bex}
 \end{columns}
 \end{frame}
 
-\hourslide{18}{BUILD}{PolicyGPT: ingest and chunk a real PDF}{Course syllabus PDF (NEP 2020 / UGC PDFs in class)}{PDF parsing, chunking strategy, metadata}
-
-\begin{frame}{Chunk with citations in mind}
+\begin{frame}{Hybrid fusion and retrieval metrics}
 \begin{columns}[T]
 \column{0.5\textwidth}
-\begin{exampleblock}{Our run}
-20 pages, 4,761 words $\rightarrow$ \textbf{79 chunks} of $\approx$90 words, each tagged with its page
-\end{exampleblock}
+\begin{bdef}[Hybrid retrieval]
+Combine keyword (BM25) and dense (embedding) rankings: keywords catch exact names and numbers, embeddings catch paraphrases.
+\end{bdef}
+\begin{bmath}[Reciprocal-rank fusion]
+$\mathrm{RRF}(d)=\sum_{r\in\text{retrievers}}\dfrac{1}{k+\mathrm{rank}_r(d)},\quad k=60$
+\end{bmath}
+\begin{bex}[RRF by hand]
+Doc ranked 1st by BM25 and 3rd by dense: $\frac1{61}+\frac1{63}=0.0323$.
+\end{bex}
 \column{0.46\textwidth}
-\begin{block}{Trade-off}
-Small chunks: precise citations, less context.\\ Large chunks: more context, diluted relevance.\\ Overlap: facts are not cut in half.
-\end{block}
+\begin{bmath}[Metrics]
+Recall@$k$ $=$ share of queries with the gold doc in the top $k$\\[2pt]
+$\mathrm{MRR}=\frac{1}{|Q|}\sum_q\frac{1}{\mathrm{rank}_q}$\\[2pt]
+$\mathrm{nDCG@10}=\frac{1}{\log_2(\mathrm{rank}+1)}$ if rank $\le 10$, else 0 (one gold doc)
+\end{bmath}
+\begin{bdef}[Re-ranker]
+A second, slower model that rescores the top candidates. A \emph{cross-encoder} reads query and passage together.
+\end{bdef}
 \end{columns}
 \end{frame}
 
-\hourslide{19}{BUILD}{Cited Q\&A API with abstention}{Course syllabus PDF}{Hybrid search, citations, abstention, FastAPI}
+\begin{frame}{Our result: retrieval finds matches, not truth}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\begin{bres}
+\begin{tabular}{lrrrr}
+ & R@1 & R@5 & MRR & Misc@1\\
+BM25 & 0.377 & 0.772 & 0.567 & \alert{0.471}\\
+Dense & 0.384 & 0.737 & 0.547 & 0.381\\
+Hybrid & \textbf{0.462} & \textbf{0.772} & \textbf{0.609} & \textbf{0.362}\\
+\end{tabular}\\[2pt]
+Learned re-ranker (held-out half): R@1 $0.468\rightarrow0.423$ --- \alert{worse}.
+\end{bres}
+\begin{bwarn}
+BM25 puts the question's own \emph{false} answer first 47\% of the time. Curate the corpus; validate re-rankers on held-out data.
+\end{bwarn}
+\column{0.44\textwidth}\centering\includegraphics[width=\linewidth]{s4_retrieval.png}
+\begin{bapp}
+Web search engines; Elasticsearch and OpenSearch hybrid search; hosted re-rankers (e.g.\ Cohere Rerank).
+\end{bapp}
+\end{columns}
+\end{frame}
 
-\begin{frame}{Knowing when to say ``I don't know''}
-\[\mathrm{coverage}(q)=\frac{\sum_{w\in q\cap\text{chunks}}\mathrm{idf}(w)}{\sum_{w\in q}\mathrm{idf}(w)}\quad\text{abstain if below threshold}\]
+%% =====================================================================
+\hourslide{18}{BUILD}{RAG architecture, PDF ingestion and chunking}{Course syllabus PDF (NEP 2020 / UGC PDFs in class)}{PDF parsing, chunking strategy, metadata}
+
+\begin{frame}{Retrieval-augmented generation (RAG)}
+\begin{bdef}[RAG]
+Retrieve relevant passages from your own documents and give them to the generator, so answers are grounded in sources you control --- and can cite them.
+\end{bdef}
+\begin{center}
+\begin{tikzpicture}[every node/.style={font=\small,rounded corners,minimum height=0.85cm,minimum width=2.0cm,align=center}]
+\node[fill=navy,text=gold] (q) at (0,0) {Question};
+\node[fill=sun,text=white] (r) at (2.7,0) {Retrieve\\top-$k$ chunks};
+\node[fill=gold,text=navy] (c) at (5.4,0) {Coverage\\check};
+\node[fill=dataC,text=white] (g) at (8.1,0) {Generate /\\extract answer};
+\node[fill=saffron,text=white] (a) at (10.8,0) {Answer +\\citations};
+\node[fill=warnC,text=white] (x) at (5.4,-1.5) {``I can't find this''};
+\foreach \u/\v in {q/r,r/c,c/g,g/a} \draw[-{Stealth},thick,navy] (\u)--(\v);
+\draw[-{Stealth},thick,warnC] (c)--(x) node[midway,right,font=\scriptsize]{low};
+\end{tikzpicture}
+\end{center}
+\begin{bdef}[Ingestion]
+Offline: parse documents $\rightarrow$ clean $\rightarrow$ chunk $\rightarrow$ embed / index, keeping metadata (file, page, section) on every chunk.
+\end{bdef}
+\end{frame}
+
+\begin{frame}[fragile]{Chunking: algorithm, maths, code and result}
+\begin{columns}[T]
+\column{0.48\textwidth}
+\begin{balgo}[Sliding-window chunking]
+\begin{algorithmic}[1]
+\For{each page $p$}
+  \State words $w\gets$ clean text of $p$
+  \For{$s=0,\,L{-}o,\,2(L{-}o),\dots$}
+    \State chunk $\gets w[s:s+L]$, tag page $p$
+  \EndFor
+\EndFor
+\end{algorithmic}
+\end{balgo}
+\begin{bmath}[How many chunks?]
+$\approx\left\lceil\frac{W-o}{L-o}\right\rceil$ per page ($L$ size, $o$ overlap)
+\end{bmath}
+\column{0.48\textwidth}
+\begin{bcode}
+\begin{lstlisting}
+reader = PdfReader(pdf_path)
+pages = [clean(p.extract_text())
+         for p in reader.pages]
+chunks = chunk_pages(pages, 90, 30)
+\end{lstlisting}
+\end{bcode}
+\begin{bres}
+20 pages, 4,761 words $\rightarrow$ \textbf{79 chunks} of about 90 words, each with its page number.
+\end{bres}
+\begin{bex}[Trade-off]
+Small chunks: precise citations, less context. Large: more context, diluted relevance.
+\end{bex}
+\end{columns}
+\end{frame}
+
+%% =====================================================================
+\hourslide{19}{BUILD}{Grounded, cited answers with abstention}{Course syllabus PDF}{Hybrid search, citations, abstention, FastAPI}
+
+\begin{frame}{Grounding, citations and abstention}
 \begin{columns}[T]
 \column{0.5\textwidth}
-\begin{exampleblock}{Answered, with citation}
-``What is the programme fee in India?''\\ $\rightarrow$ ``\ldots INR 50,000 (Hyderabad \& Shirdi)'' [p.\,1]
-\end{exampleblock}
+\begin{bdef}[Grounded answer]
+Every claim in the answer is supported by a retrieved passage, and the passage is cited.
+\end{bdef}
+\begin{bdef}[Abstention]
+Refusing to answer when the documents do not contain the answer --- the main defence against hallucination.
+\end{bdef}
+\begin{bmath}[Coverage]
+$\mathrm{cov}(q)=\dfrac{\sum_{w\in q\cap\text{chunks}}\mathrm{idf}(w)}{\sum_{w\in q}\mathrm{idf}(w)}$; \; abstain if $\mathrm{cov}<\tau$
+\end{bmath}
 \column{0.46\textwidth}
-\begin{alertblock}{Abstained}
-``What is the hostel fee?'' --- ``fee'' matches, ``hostel'' never appears. Coverage 0.40.
-\end{alertblock}
+\begin{balgo}[Answer pipeline]
+\begin{algorithmic}[1]
+\State hybrid-retrieve top 3 chunks
+\If{$\mathrm{cov}(q)<\tau$}
+  \State \Return ``I can't find this''
+\EndIf
+\State pick best 25-word span
+\State \Return span + page citations
+\end{algorithmic}
+\end{balgo}
 \end{columns}
 \end{frame}
 
+\begin{frame}[fragile]{API code, results and products}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{bcode}
+\begin{lstlisting}
+app = FastAPI(title="PolicyGPT")
+class Ask(BaseModel):
+    question: str
+    k: int = 3
+@app.post("/ask")
+def ask(req: Ask):
+    return {"question": req.question,
+            **answer(req.question, req.k)}
+# uvicorn policygpt_api:app --reload
+\end{lstlisting}
+\end{bcode}
+\column{0.46\textwidth}
+\begin{bres}
+``What is the programme fee in India?'' $\rightarrow$ ``\ldots INR 50,000 (Hyderabad \& Shirdi)'' [p.\,1].\\[2pt]
+``What is the hostel fee?'' $\rightarrow$ \textbf{abstains} (coverage 0.40): ``hostel'' never appears.
+\end{bres}
+\begin{bapp}
+Cited-answer products: Perplexity, Microsoft Copilot with sources, Google NotebookLM; enterprise assistants over HR, legal and policy documents.
+\end{bapp}
+\end{columns}
+\end{frame}
+
+%% =====================================================================
 \hourslide{20}{BUILD}{Evaluate: dev set to tune, golden set to test}{8 dev + 25 golden questions}{RAG evaluation, hallucination measurement, regression tests}
 
-\begin{frame}{Golden-set results (threshold 0.50 from the dev set)}
+\begin{frame}{Evaluation design}
 \begin{columns}[T]
 \column{0.5\textwidth}
-\renewcommand{\arraystretch}{1.2}
+\begin{bdef}[Dev set vs golden set]
+\textbf{Dev}: used to choose settings (threshold $\tau$). \textbf{Golden}: never touched until the final report. Reporting on the tuning set overstates quality.
+\end{bdef}
+\begin{bmath}[Metrics]
+hit@3 $=$ gold fact in top-3 chunks\\
+answer accuracy $=$ gold fact in the answer\\
+abstention accuracy $=$ share of unanswerable questions refused\\
+faithfulness $=$ share of answer words found in cited chunks
+\end{bmath}
+\column{0.46\textwidth}
+\begin{balgo}[Tune the threshold]
+\begin{algorithmic}[1]
+\For{$\tau\in\{0.30,0.35,\dots,0.90\}$}
+  \State score$(\tau)$ on the dev set
+\EndFor
+\State $\tau^\ast\gets$ middle of the best plateau
+\State report once on the golden set
+\end{algorithmic}
+\end{balgo}
+\begin{bapp}
+RAG evaluation tools: RAGAS, TruLens, LangSmith; keep the golden set as a regression test in CI.
+\end{bapp}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Golden-set result and lessons}
+\begin{columns}[T]
+\column{0.48\textwidth}
+\begin{bres}[Our result ($\tau^\ast=0.50$ from dev)]
 \begin{tabular}{lr}
-\toprule
 Retrieval hit@3 & \textbf{0.95}\\
 Answer has gold fact & 0.60\\
 Wrongly abstained & \textbf{0.00}\\
 Correctly abstained & \textbf{1.00}\\
 Faithfulness & 1.00\\
-\bottomrule
 \end{tabular}
-\column{0.46\textwidth}
-\begin{alertblock}{Version 1}
-Hand-picked threshold: 55\% wrongly abstained. Never tune on the set you report.
-\end{alertblock}
-\begin{block}{Next step}
-Right page, wrong words $\Rightarrow$ add an LLM generator with the same citations \& abstention.
+\end{bres}
+\column{0.48\textwidth}
+\begin{bwarn}[Version 1]
+A hand-picked threshold wrongly abstained on 55\% of answerable questions: words like ``earns'' and ``covers'' never appear in documents. Fix: ignore question-phrasing words; tune on dev.
+\end{bwarn}
+\begin{bex}[Failure analysis]
+Right page found but wrong 25 words picked $\Rightarrow$ an LLM generator, with the same citations and abstention rule, is the next step.
+\end{bex}
+\end{columns}
+\end{frame}
+
+%% =====================================================================
+\begin{frame}{Formula sheet --- Sunday 4}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabularx}{\linewidth}{l X}
+\toprule
+Cosine & $\frac{u\cdot v}{\lVert u\rVert\lVert v\rVert}$; \; unit vectors: $u^\top v$\\
+LSA & $X\approx U_k\Sigma_kV_k^\top$\\
+BM25 & $\sum_t\mathrm{IDF}(t)\frac{f(k_1+1)}{f+k_1(1-b+b|d|/\overline{|d|})}$\\
+RRF & $\sum_r 1/(60+\mathrm{rank}_r)$\\
+MRR / nDCG & $\frac1{|Q|}\sum 1/\mathrm{rank}$; \; $1/\log_2(\mathrm{rank}+1)$\\
+Coverage & $\sum_{w\in q\cap C}\mathrm{idf}(w)/\sum_{w\in q}\mathrm{idf}(w)$\\
+\bottomrule
+\end{tabularx}
+\end{frame}
+
+\begin{frame}{Check yourself}
+\begin{enumerate}
+\item Two unit vectors have dot product 0.9. What is their cosine similarity?
+\item Why might BM25 rank a \emph{false} answer above the true one?
+\item A document is ranked 2nd by BM25 and 2nd by dense search. What is its RRF score?
+\item Why must the abstention threshold be chosen on a dev set, not the golden set?
+\item hit@3 is 0.95 but answer accuracy is 0.60. Which component should you improve?
+\end{enumerate}
+\begin{bex}[Answers]
+1. 0.9. \;2. It matches words, and misconceptions use the same words as the question. \;3. $2/62\approx0.0323$. \;4. Tuning on the test set overstates quality. \;5. The answer extractor / generator --- retrieval already works.
+\end{bex}
+\end{frame}
+
+\begin{frame}{Glossary and submission}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\begin{bdef}[Glossary]
+\textbf{Embedding} meaning-vector $\cdot$ \textbf{ANN} approximate nearest neighbour $\cdot$ \textbf{IVF / HNSW} ANN index types $\cdot$ \textbf{BM25} keyword ranking $\cdot$ \textbf{RRF} rank fusion $\cdot$ \textbf{Re-ranker} second-stage scorer $\cdot$ \textbf{RAG} retrieval-augmented generation $\cdot$ \textbf{Abstention} refusing when unsupported
+\end{bdef}
+\column{0.44\textwidth}
+\begin{block}{Submit by 18:00 --- P4 PolicyGPT}
+Notebook $\cdot$ \texttt{src/policygpt\_api.py} $\cdot$ golden set in \texttt{tests/} $\cdot$ evaluation table + failure log $\rightarrow$ tag \texttt{sunday-4}
 \end{block}
 \end{columns}
-\vspace{4pt}
-\begin{block}{Submit by 18:00 --- P4 PolicyGPT}
-Notebook $\cdot$ \texttt{src/policygpt\_api.py} $\cdot$ golden set in \texttt{tests/} $\cdot$ eval table $\rightarrow$ tag \texttt{sunday-4}
-\end{block}
 \end{frame}
 \end{document}

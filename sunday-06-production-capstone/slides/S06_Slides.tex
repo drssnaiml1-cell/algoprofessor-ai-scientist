@@ -8,131 +8,391 @@
 \begin{document}
 \begin{frame}[plain]\titlepage\end{frame}
 
+\begin{frame}{Learning objectives}
+\begin{columns}[T]
+\column{0.55\textwidth}
+By 18:00 today you can:
+\begin{enumerate}
+\item Serve a model as a tested API in a container with CI/CD
+\item Version models in a registry and monitor drift (PSI, KS)
+\item Measure and mitigate unfairness between groups
+\item Red-team a system and explain key AI regulations
+\item Audit a project for production readiness
+\item Pitch it in 7 minutes and answer interview questions
+\end{enumerate}
+\column{0.4\textwidth}
+\begin{bdef}[Prerequisites]
+Sundays 1--5: a trained model or agent you can ship.
+\end{bdef}
+\begin{bapp}[Project of the day]
+\textbf{P6 --- Capstone in Production}: one project deployed, tested, monitored, audited and pitched.
+\end{bapp}
+\end{columns}
+\end{frame}
+
+\legendframe
+
 \begin{frame}{Today at a glance}
 \renewcommand{\arraystretch}{1.25}
 \begin{tabularx}{\linewidth}{c c X l}
 \toprule
 \textbf{Hour} & \textbf{Mode} & \textbf{Focus} & \textbf{Dataset}\\
 \midrule
-26 & \teachtag & Service, tests, Docker, CI/CD, registry, drift & \ds{Telco + Housing}\\
-27 & \teachtag & Fairness, red-teaming, AI law basics & \ds{Adult + TruthfulQA}\\
-28 & \buildtag & Automated readiness audit & \ds{Your capstone}\\
+26 & \teachtag & APIs, tests, containers, CI/CD, registry, drift & \ds{Telco + Housing}\\
+27 & \teachtag & Fairness metrics and mitigation, red-teaming, AI law & \ds{Adult + TruthfulQA}\\
+28 & \buildtag & Production-readiness audit & \ds{Your capstone}\\
 29 & \buildtag & Demo Day: 7-minute pitch & \ds{Your results}\\
-30 & \buildtag & Career Lab: mock interview, radar, 90 days & \ds{Interview bank}\\
+30 & \buildtag & Career Lab: interviews, radar, 90-day plan & \ds{Interview bank}\\
 \bottomrule
 \end{tabularx}
-\vspace{6pt}
-\begin{block}{By 18:00 today}
-P6 --- Capstone in Production on GitHub, tagged \texttt{sunday-6}.
-\end{block}
 \end{frame}
 
-\hourslide{26}{TEACH}{MLOps: package, test, containerise, automate, monitor}{IBM Telco + California Housing (drift)}{FastAPI, pytest, Docker, GitHub Actions, registry, drift}
+%% =====================================================================
+\hourslide{26}{TEACH}{MLOps: serve, test, containerise, automate, monitor}{IBM Telco (service) + California Housing (drift)}{FastAPI, pytest, Docker, CI/CD, registry, drift}
 
-\begin{frame}{The production loop}
+\begin{frame}{What MLOps is}
+\begin{bdef}[MLOps]
+The practices that take a model from a notebook to a reliable service and keep it reliable: versioning, testing, packaging, automated deployment and monitoring.
+\end{bdef}
 \begin{center}
-\begin{tikzpicture}[every node/.style={font=\small,rounded corners,minimum height=0.9cm,minimum width=2.1cm,align=center}]
+\begin{tikzpicture}[every node/.style={font=\small,rounded corners,minimum height=0.85cm,minimum width=2.0cm,align=center}]
 \node[fill=sun,text=white] (t) at (0,0) {Train};
-\node[fill=navy,text=gold] (r) at (2.8,0) {Registry};
-\node[fill=gold,text=navy] (c) at (5.6,0) {CI: test\\+ build};
-\node[fill=dataC,text=white] (s) at (8.4,0) {Serve API};
-\node[fill=warnC,text=white] (m) at (11.2,0) {Monitor drift};
+\node[fill=navy,text=gold] (r) at (2.7,0) {Registry};
+\node[fill=gold,text=navy] (c) at (5.4,0) {CI: test\\+ build};
+\node[fill=dataC,text=white] (s) at (8.1,0) {Serve API};
+\node[fill=warnC,text=white] (m) at (10.8,0) {Monitor};
 \foreach \a/\b in {t/r,r/c,c/s,s/m} \draw[-{Stealth},thick,navy] (\a)--(\b);
-\draw[-{Stealth},thick,warnC,dashed] (m.south) -- ++(0,-0.55) -| (t.south) node[pos=0.25,below,font=\scriptsize]{alert $\rightarrow$ retrain or roll back};
+\draw[-{Stealth},thick,warnC,dashed] (m.south) -- ++(0,-0.5) -| (t.south) node[pos=0.25,below,font=\scriptsize]{drift alert $\rightarrow$ retrain or roll back};
 \end{tikzpicture}
 \end{center}
-\begin{exampleblock}{Our run}
-\texttt{churn-logreg} v1, ROC-AUC 0.8438 $\cdot$ \textbf{4 tests passed} (health, high-risk, loyal customer lower, bad input $\rightarrow$ 422) $\cdot$ Dockerfile $\cdot$ CI workflow
-\end{exampleblock}
+\begin{columns}[T]
+\column{0.32\textwidth}
+\begin{bdef}[REST API]
+A URL endpoint that takes JSON in and returns JSON out.
+\end{bdef}
+\column{0.32\textwidth}
+\begin{bdef}[Container]
+Code + dependencies packaged to run the same everywhere.
+\end{bdef}
+\column{0.32\textwidth}
+\begin{bdef}[CI/CD]
+Every push runs tests and builds automatically; green builds deploy.
+\end{bdef}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Service, tests and container in code}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\begin{bcode}[app/main.py]
+\begin{lstlisting}
+class Customer(BaseModel):
+    tenure: int = Field(ge=0, le=120)
+    MonthlyCharges: float = Field(gt=0)
+    Contract: str
+@app.post("/predict")
+def predict(c: Customer):
+    p = MODEL.predict_proba(to_frame(c))[0, 1]
+    return {"churn_probability": round(p, 4),
+            "model_version": META["version"]}
+\end{lstlisting}
+\end{bcode}
+\column{0.44\textwidth}
+\begin{bcode}[tests and Dockerfile]
+\begin{lstlisting}
+def test_rejects_bad_input():
+    r = client.post("/predict", json={**GOOD, "tenure": -5})
+    assert r.status_code == 422
+# Dockerfile
+FROM python:3.12-slim
+COPY app registry ./
+USER 1000
+CMD ["uvicorn", "app.main:app"]
+\end{lstlisting}
+\end{bcode}
+\begin{bres}
+v1 AUC 0.8438 $\cdot$ \textbf{4 tests pass}.
+\end{bres}
+\end{columns}
+\end{frame}
+
+\begin{frame}{CI/CD and the model registry}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{balgo}[CI pipeline on every push]
+\begin{algorithmic}[1]
+\State check out code
+\State install pinned dependencies
+\State run unit and API tests
+\If{any test fails} \State stop; nothing deploys \EndIf
+\State build container image tagged with commit
+\State deploy to staging, then production
+\end{algorithmic}
+\end{balgo}
+\column{0.46\textwidth}
+\begin{bdef}[Model registry]
+Stores every model version with its metrics, data version and stage (staging, production, archived), so you can compare and roll back.
+\end{bdef}
+\begin{bapp}
+GitHub Actions, GitLab CI; MLflow Model Registry; managed platforms such as AWS SageMaker, Google Vertex AI, Azure ML; Kubernetes for scaling.
+\end{bapp}
+\end{columns}
 \end{frame}
 
 \begin{frame}{Drift: is today's data still like training data?}
-\centering\includegraphics[width=0.8\linewidth]{s6_drift.png}\\[2pt]
-\small PSI $=\sum_i (c_i-r_i)\ln\frac{c_i}{r_i}$ \quad major shift: longitude 2.03, latitude 1.07, income 0.33\quad
-RMSE \textbf{\$52,815} $\rightarrow$ \alert{\textbf{\$76,285}}
-\end{frame}
-
-\hourslide{27}{TEACH}{Responsible AI: fairness, red-teaming, law}{UCI Adult + TruthfulQA}{Fairlearn, bias mitigation, red-team playbooks, AI governance}
-
-\begin{frame}{Removing the column does not remove the bias}
 \begin{columns}[T]
 \column{0.5\textwidth}
-\renewcommand{\arraystretch}{1.15}
+\begin{bdef}[Data drift vs concept drift]
+\textbf{Data drift}: inputs change, $p(x)$ shifts. \textbf{Concept drift}: the relationship changes, $p(y\mid x)$ shifts.
+\end{bdef}
+\begin{bmath}[PSI and KS]
+$\mathrm{PSI}=\sum_i (c_i-r_i)\ln\frac{c_i}{r_i}$ \;(bins of reference)\\
+$<0.1$ stable, $0.1$--$0.25$ moderate, $>0.25$ major\\[2pt]
+$D_{KS}=\sup_x|F_{ref}(x)-F_{cur}(x)|$
+\end{bmath}
+\begin{bex}[PSI by hand]
+Bin share $r=0.5\rightarrow c=0.3$: $(0.3-0.5)\ln(0.6)=0.102$.
+\end{bex}
+\column{0.46\textwidth}
+\begin{bres}
+Coastal $\rightarrow$ inland: PSI longitude 2.03, latitude 1.07, income 0.33. RMSE \$52,815 $\rightarrow$ \alert{\textbf{\$76,285}}.
+\end{bres}
+\centering\includegraphics[width=\linewidth]{s6_drift.png}
+\begin{bapp}
+Evidently, WhyLabs, Arize; cloud model monitors.
+\end{bapp}
+\end{columns}
+\end{frame}
+
+%% =====================================================================
+\hourslide{27}{TEACH}{Responsible AI: fairness, red-teaming, law}{UCI Adult + TruthfulQA}{Fairness metrics, mitigation, red-teaming, AI governance}
+
+\begin{frame}{Fairness: definitions and metrics}
+\begin{bdef}[Algorithmic fairness]
+A model is unfair when its errors or benefits differ systematically across groups (e.g.\ by sex or caste) in ways that cannot be justified for the decision.
+\end{bdef}
+\begin{columns}[T]
+\column{0.55\textwidth}
+\begin{bmath}[Two common metrics]
+Demographic parity difference:\\ $\;|P(\hat y=1\mid A=a)-P(\hat y=1\mid A=b)|$\\[2pt]
+Equalized odds difference:\\ $\;\max\big(|\mathrm{TPR}_a-\mathrm{TPR}_b|,\;|\mathrm{FPR}_a-\mathrm{FPR}_b|\big)$
+\end{bmath}
+\column{0.41\textwidth}
+\begin{bex}[Our baseline]
+Selection rate women 0.073, men 0.262 $\Rightarrow$ DP difference 0.189. TPR 0.494 vs 0.631; FPR 0.020 vs 0.101.
+\end{bex}
+\begin{bdef}[Proxy discrimination]
+\texttt{sex} was not an input; marital status and relationship carried it in.
+\end{bdef}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Mitigation: algorithm, maths, code, result}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{bmath}[Reweighing (pre-processing)]
+$w(g,y)=\dfrac{P(G=g)\,P(Y=y)}{P(G=g,\,Y=y)}$ --- makes group and label look independent
+\end{bmath}
+\begin{balgo}[Fairness audit]
+\begin{algorithmic}[1]
+\State choose groups and a fairness definition
+\State measure metrics per group
+\State try pre- / in- / post-processing fixes
+\State report accuracy--fairness trade-off
+\State a human decides; document why
+\end{algorithmic}
+\end{balgo}
+\column{0.46\textwidth}
+\begin{bcode}
+\begin{lstlisting}
+to = ThresholdOptimizer(estimator=base,
+       constraints="equalized_odds", prefit=True)
+to.fit(X_tr, y_tr, sensitive_features=s_tr)
+\end{lstlisting}
+\end{bcode}
+\begin{bres}
 \begin{tabular}{lrrr}
-\toprule
-Method & Acc & DP & EO\\
-\midrule
+ & Acc & DP & EO\\
 Baseline & 0.854 & 0.189 & 0.137\\
 Reweighing & 0.849 & 0.102 & 0.082\\
 EO thresholds & 0.838 & 0.097 & \textbf{0.055}\\
-\bottomrule
-\end{tabular}\\[5pt]
-\small Selection rate: women 0.073, men 0.262 --- with \texttt{sex} \emph{not} an input
-\column{0.48\textwidth}\centering\includegraphics[width=\linewidth]{s6_fairness.png}
+\end{tabular}
+\end{bres}
 \end{columns}
 \end{frame}
 
-\begin{frame}{Red-teaming and the law}
-\begin{columns}[T]
-\column{0.48\textwidth}
-\begin{alertblock}{Red-team result}
-A naive retrieval system repeats the misconception \textbf{47.1\%} of the time --- Nutrition 87.5\%, Psychology 73.7\%.
-\end{alertblock}
-\small Playbook: misconceptions $\cdot$ prompt injection $\cdot$ personal data $\cdot$ jailbreaks $\cdot$ bias probes $\cdot$ over-confidence
-\column{0.48\textwidth}
-\begin{block}{EU AI Act}
-\small Unacceptable $\cdot$ high-risk (hiring, credit, education) $\cdot$ limited (transparency) $\cdot$ minimal
-\end{block}
-\begin{block}{India DPDP Act 2023}
-\small Purpose + consent $\cdot$ rights to access, correct, erase $\cdot$ breach reporting $\cdot$ Data Protection Board
-\end{block}
-\end{columns}
-\end{frame}
-
-\hourslide{28}{BUILD}{Capstone hardening: readiness audit}{Your capstone repository}{Testing, monitoring, audit docs, deployment}
-
-\begin{frame}{Ten checks before Demo Day}
+\begin{frame}{Red-teaming and AI law}
 \begin{columns}[T]
 \column{0.5\textwidth}
-\small README sections $\cdot$ requirements $\cdot$ tests present $\cdot$ tests pass $\cdot$ Dockerfile $\cdot$ CI $\cdot$ model card $\cdot$ fairness/safety audit $\cdot$ LICENSE $\cdot$ no secrets
+\begin{bdef}[Red-teaming]
+Deliberately attacking your own system to find failures before users do.
+\end{bdef}
+\begin{balgo}[Red-team cycle]
+\begin{algorithmic}[1]
+\For{each risk category}
+  \State write probes; run them
+  \State log output, severity, fix
+\EndFor
+\State re-test after every fix
+\end{algorithmic}
+\end{balgo}
+\begin{bres}
+Naive retrieval repeats the misconception \textbf{47.1\%} of the time.
+\end{bres}
 \column{0.46\textwidth}
-\begin{exampleblock}{Demo capstone}
-\textbf{8/10} --- missing \texttt{docs/audit.md} and \texttt{LICENSE}: two tickets before Demo Day
-\end{exampleblock}
+\begin{bdef}[EU AI Act]
+Risk tiers: \emph{unacceptable} (banned) $\cdot$ \emph{high-risk} (hiring, credit, education: risk management, human oversight, logging) $\cdot$ \emph{limited} (transparency) $\cdot$ \emph{minimal}.
+\end{bdef}
+\begin{bdef}[India DPDP Act 2023]
+Purpose and consent $\cdot$ rights to access, correct, erase $\cdot$ breach reporting $\cdot$ Data Protection Board.
+\end{bdef}
+\begin{bapp}
+Fairlearn, IBM AIF360, MS RAI Toolbox.
+\end{bapp}
 \end{columns}
 \end{frame}
 
-\hourslide{29}{BUILD}{Demo Day: a 7-minute pitch}{Your capstone results}{Product thinking, technical pitch, hard questions}
+%% =====================================================================
+\hourslide{28}{BUILD}{Production-readiness audit}{Your capstone repository}{Testing, monitoring, audit documentation, deployment}
 
-\begin{frame}{The 7-minute structure}
-\renewcommand{\arraystretch}{1.15}
-\begin{tabularx}{\linewidth}{l l X}
+\begin{frame}{Readiness: definition, checklist, result}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{bdef}[Production readiness]
+Evidence that a system can be run, changed and trusted by people other than its author.
+\end{bdef}
+\begin{balgo}[Automated audit]
+\begin{algorithmic}[1]
+\For{each check $c$ in the checklist}
+  \State pass$_c\gets c(\text{repo})$
+\EndFor
+\State score $\gets\sum_c$ pass$_c$
+\State open a ticket for each failed check
+\end{algorithmic}
+\end{balgo}
+\column{0.46\textwidth}
+\begin{bex}[Ten checks]
+README sections $\cdot$ requirements $\cdot$ tests exist $\cdot$ tests pass $\cdot$ Dockerfile $\cdot$ CI $\cdot$ model card $\cdot$ fairness/safety audit $\cdot$ LICENSE $\cdot$ no secrets
+\end{bex}
+\begin{bres}
+Demo capstone \textbf{8/10}: missing \texttt{docs/audit.md} and \texttt{LICENSE}.
+\end{bres}
+\begin{bapp}
+Industry rubrics such as Google's ``ML Test Score'' for production ML systems.
+\end{bapp}
+\end{columns}
+\end{frame}
+
+%% =====================================================================
+\hourslide{29}{BUILD}{Demo Day: the 7-minute pitch}{Your capstone results}{Product thinking, technical pitch, hard questions}
+
+\begin{frame}{The pitch}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{bdef}[Technical pitch]
+A short story that connects a real problem, a working demo and evidence to a clear next step.
+\end{bdef}
+\renewcommand{\arraystretch}{1.1}
+\small
+\begin{tabular}{ll}
+0:00 & Hook: cost of the problem\\
+0:45 & Problem \& user\\
+1:45 & Live demo\\
+3:15 & Evidence (held-out metric)\\
+4:30 & Responsibility (audit)\\
+5:30 & What's next\\
+6:30 & The ask\\
+\end{tabular}
+\column{0.46\textwidth}
+\begin{bex}[Evidence line]
+``ROC-AUC 0.84 on held-out data; 8/10 readiness checks; drift monitor live; fairness gap reduced from 0.19 to 0.10.''
+\end{bex}
+\begin{bwarn}[Rehearse the hard questions]
+What if the data drifts? How do you know it is fair? Cost of a false positive vs a false negative? Why this model? When would you switch it off?
+\end{bwarn}
+\end{columns}
+\end{frame}
+
+%% =====================================================================
+\hourslide{30}{BUILD}{Career Lab}{Interview question bank}{Interview performance, portfolio positioning, founder basics}
+
+\begin{frame}{Interviews: frameworks that work}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{balgo}[ML system-design answer]
+\begin{algorithmic}[1]
+\State clarify goal, users, scale, latency
+\State data: sources, labels, leakage risks
+\State baseline, then model choice
+\State offline metrics $\rightarrow$ online A/B test
+\State serving, monitoring, retraining
+\State risks: fairness, privacy, failure modes
+\end{algorithmic}
+\end{balgo}
+\begin{bdef}[STAR method]
+Behavioural answers: \textbf{S}ituation, \textbf{T}ask, \textbf{A}ction, \textbf{R}esult.
+\end{bdef}
+\column{0.46\textwidth}\centering\includegraphics[width=0.8\linewidth]{s6_radar.png}
+\begin{bex}[Use your own evidence]
+``Why did the CNN collapse under noise in P2 while the ViT did not?''
+\end{bex}
+\end{columns}
+\end{frame}
+
+\begin{frame}{90-day plan}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{bex}[Days 1--90]
+\textbf{1--30:} polish six repos; one blog post per project.\\
+\textbf{31--60:} real users for the capstone; one competition.\\
+\textbf{61--90:} 30+ targeted applications with referrals; weekly mock interviews.
+\end{bex}
+\column{0.46\textwidth}
+\begin{bapp}
+GitHub portfolio and Releases; LinkedIn; Kaggle and Hugging Face competitions; open-source contributions.
+\end{bapp}
+\begin{bwarn}[An honest note]
+The course gives a strong start. Offers come from what you keep building after it.
+\end{bwarn}
+\end{columns}
+\end{frame}
+
+%% =====================================================================
+\begin{frame}{Formula sheet --- Sunday 6}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabularx}{\linewidth}{l X}
 \toprule
-0:00 & Hook & The cost of the problem, in one number\\
-0:45 & Problem \& user & Who suffers and how they work today\\
-1:45 & Live demo & One real request, one real answer\\
-3:15 & Evidence & Held-out metric, readiness score, monitoring\\
-4:30 & Responsibility & Fairness audit, model card, human in control\\
-5:30 & Next & Experiment plan, retraining trigger\\
-6:30 & The ask & One concrete next step\\
+PSI & $\sum_i (c_i-r_i)\ln(c_i/r_i)$; \; $>0.25$ major shift\\
+KS statistic & $\sup_x|F_{ref}(x)-F_{cur}(x)|$\\
+Demographic parity & $|P(\hat y=1\mid a)-P(\hat y=1\mid b)|$\\
+Equalized odds & $\max(|\Delta\mathrm{TPR}|,\,|\Delta\mathrm{FPR}|)$\\
+Reweighing & $w(g,y)=P(g)P(y)/P(g,y)$\\
 \bottomrule
 \end{tabularx}
 \end{frame}
 
-\hourslide{30}{BUILD}{Career Lab}{Interview question bank}{Interview performance, portfolio positioning, founder basics}
+\begin{frame}{Check yourself}
+\begin{enumerate}
+\item What is the difference between data drift and concept drift?
+\item A feature's PSI is 0.18. What should you do?
+\item Why can a model without the \texttt{sex} column still be unfair by sex?
+\item Which EU AI Act tier would a CV-screening tool fall into?
+\item Name two checks your capstone must pass before Demo Day.
+\end{enumerate}
+\begin{bex}[Answers]
+1. Inputs change vs the input--output relationship changes. \;2. Moderate shift: investigate and watch performance. \;3. Proxies (marital status, relationship) carry the information. \;4. High-risk. \;5. Any two of the ten, e.g.\ tests pass and a fairness/safety audit exists.
+\end{bex}
+\end{frame}
 
-\begin{frame}{Mock interview, radar, 90 days}
-\begin{columns}[c]
-\column{0.4\textwidth}\centering\includegraphics[width=0.95\linewidth]{s6_radar.png}
-\column{0.56\textwidth}
-\begin{block}{Answer with your own evidence}
-\small ``Why did the CNN collapse under noise in P2 while the ViT did not?''
-\end{block}
-\small \textbf{Days 1--30:} polish six repos, one blog post each\\
-\textbf{Days 31--60:} real users for the capstone, one competition\\
-\textbf{Days 61--90:} 30+ targeted applications, referrals, mock interviews
-\begin{block}{Submit by 18:00 --- P6}
-Live URL $\cdot$ CI badge $\cdot$ audit $\cdot$ model card $\cdot$ pitch deck $\rightarrow$ tag \texttt{sunday-6}
+\begin{frame}{Glossary and submission}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\begin{bdef}[Glossary]
+\textbf{MLOps} running ML reliably $\cdot$ \textbf{CI/CD} automated test and deploy $\cdot$ \textbf{Registry} versioned models $\cdot$ \textbf{Drift} changing data $\cdot$ \textbf{PSI} drift score $\cdot$ \textbf{DP / EO} fairness metrics $\cdot$ \textbf{Red-teaming} attacking your own system $\cdot$ \textbf{STAR} interview answer structure
+\end{bdef}
+\column{0.44\textwidth}
+\begin{block}{Submit by 18:00 --- P6 Capstone}
+Live URL $\cdot$ CI badge $\cdot$ \texttt{docs/audit.md} $\cdot$ model card $\cdot$ pitch deck $\rightarrow$ tag \texttt{sunday-6} $\rightarrow$ Release $\rightarrow$ submit
 \end{block}
 \end{columns}
 \end{frame}

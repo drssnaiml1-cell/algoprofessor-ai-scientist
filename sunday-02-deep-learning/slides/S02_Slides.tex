@@ -8,166 +8,494 @@
 \begin{document}
 \begin{frame}[plain]\titlepage\end{frame}
 
+\begin{frame}{Learning objectives}
+\begin{columns}[T]
+\column{0.55\textwidth}
+By 18:00 today you can:
+\begin{enumerate}
+\item Explain neurons, activations, loss and backpropagation
+\item Write a PyTorch training loop from scratch
+\item Design a CNN and explain convolution, pooling, batch-norm
+\item Build a leakage-free image data pipeline
+\item Compare a CNN with a Vision Transformer and read Grad-CAM
+\item Test robustness, quantise and export a model to ONNX
+\end{enumerate}
+\column{0.4\textwidth}
+\begin{bdef}[Prerequisites]
+Sunday 1: loss functions, gradient descent, train/validation/test splits.
+\end{bdef}
+\begin{bapp}[Project of the day]
+\textbf{P2 --- LeafDoctor}: a phone-sized model that diagnoses apple-leaf disease from a photo.
+\end{bapp}
+\end{columns}
+\end{frame}
+
+\legendframe
+
 \begin{frame}{Today at a glance}
 \renewcommand{\arraystretch}{1.25}
 \begin{tabularx}{\linewidth}{c c X l}
 \toprule
 \textbf{Hour} & \textbf{Mode} & \textbf{Focus} & \textbf{Dataset}\\
 \midrule
-6 & \teachtag & Tensors, autograd, training loop & \ds{Fashion-MNIST}\\
-7 & \teachtag & CNNs, augmentation, mixed precision & \ds{CIFAR-10}\\
-8 & \buildtag & LeafDoctor data pipeline \& leakage checks & \ds{PlantVillage (apple)}\\
-9 & \buildtag & CNN vs tiny ViT, Grad-CAM & \ds{PlantVillage (apple)}\\
-10 & \buildtag & Robustness, INT8, ONNX, model card & \ds{PlantVillage + shifts}\\
+6 & \teachtag & Neurons, autograd, backpropagation, training loop & \ds{Fashion-MNIST}\\
+7 & \teachtag & Convolution, pooling, batch-norm, augmentation & \ds{CIFAR-10}\\
+8 & \buildtag & Image pipeline, splits, leakage checks & \ds{PlantVillage (apple)}\\
+9 & \buildtag & Vision Transformer, Grad-CAM, error analysis & \ds{PlantVillage (apple)}\\
+10 & \buildtag & Distribution shift, quantisation, ONNX, model card & \ds{PlantVillage + shifts}\\
 \bottomrule
 \end{tabularx}
-\vspace{6pt}
-\begin{block}{By 18:00 today}
-P2 --- LeafDoctor on GitHub, tagged \texttt{sunday-2}.
-\end{block}
 \end{frame}
 
-\hourslide{6}{TEACH}{Tensors, autograd and the training loop}{Fashion-MNIST (70,000 images)}{PyTorch core, autograd, custom training loops, loss curves}
+%% =====================================================================
+\hourslide{6}{TEACH}{Neural networks, autograd and backpropagation}{Fashion-MNIST (70,000 images)}{PyTorch core, autograd, custom training loops, loss curves}
 
-\begin{frame}[fragile]{Five lines run every neural network}
+\begin{frame}{The artificial neuron}
+\begin{bdef}[Neural network]
+Layers of simple units. Each unit takes a weighted sum of its inputs and passes it through a non-linear \emph{activation}. Stacking layers lets the network learn complex functions.
+\end{bdef}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\begin{bmath}[Neuron and activations]
+$a=\varphi(w^\top x+b)$\\[3pt]
+ReLU $\varphi(z)=\max(0,z)$ \quad Sigmoid $\sigma(z)=\frac{1}{1+e^{-z}}$\\[3pt]
+Softmax $\;p_c=\dfrac{e^{z_c}}{\sum_{k}e^{z_k}}$ (turns scores into probabilities)
+\end{bmath}
+\column{0.44\textwidth}
+\begin{bex}[One neuron by hand]
+$x=(1,2)$, $w=(0.5,-1)$, $b=1$: $z=0.5-2+1=-0.5$, ReLU $\rightarrow 0$, sigmoid $\rightarrow 0.38$.
+\end{bex}
+\begin{bwarn}
+Without non-linear activations, any stack of layers collapses into one linear model.
+\end{bwarn}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Loss and the chain rule}
 \begin{columns}[T]
 \column{0.5\textwidth}
-\begin{lstlisting}
-for xb, yb in batches:
-    out  = model(xb)              # forward
-    loss = F.cross_entropy(out, yb)
-    opt.zero_grad()
-    loss.backward()               # autograd
-    opt.step()                    # update
-\end{lstlisting}
-Cross-entropy: $L=-\log p_y$
+\begin{bmath}[Cross-entropy loss]
+$L=-\log p_y$ \quad ($p_y$ = probability given to the true class)
+\end{bmath}
+\begin{bex}[How harsh is it?]
+$p_y=0.9\Rightarrow L=0.105$ \qquad $p_y=0.1\Rightarrow L=2.30$\\ Confident and wrong costs 22$\times$ more.
+\end{bex}
 \column{0.46\textwidth}
-\begin{exampleblock}{Our run}
-Autograd check: $\frac{d}{dw}(2w-4)^2=8$ at $w=3$ \checkmark\\[3pt]
-MLP 784--256--128--10:\\ \textbf{87.1\% test accuracy} in 5 epochs
-\end{exampleblock}
+\begin{bdef}[Autograd]
+PyTorch records every operation in a \emph{computational graph}, then applies the chain rule backwards to get every gradient automatically.
+\end{bdef}
+\begin{bmath}[Chain rule]
+$\dfrac{\partial L}{\partial w}=\dfrac{\partial L}{\partial a}\cdot\dfrac{\partial a}{\partial z}\cdot\dfrac{\partial z}{\partial w}$
+\end{bmath}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Backpropagation and optimisers}
+\begin{columns}[T]
+\column{0.48\textwidth}
+\begin{balgo}[Training with backpropagation]
+\begin{algorithmic}[1]
+\For{each epoch}
+  \For{each mini-batch $(X_b,y_b)$}
+    \State forward: $\hat y=f_\theta(X_b)$
+    \State loss $L(\hat y,y_b)$
+    \State backward: $g=\nabla_\theta L$ (chain rule)
+    \State update $\theta$ with the optimiser
+  \EndFor
+\EndFor
+\end{algorithmic}
+\end{balgo}
+\column{0.48\textwidth}
+\begin{bmath}[Adam optimiser]
+$m_t=\beta_1m_{t-1}+(1-\beta_1)g_t$\\
+$v_t=\beta_2v_{t-1}+(1-\beta_2)g_t^2$\\
+$\theta_t=\theta_{t-1}-\eta\,\dfrac{\hat m_t}{\sqrt{\hat v_t}+\epsilon}$
+\end{bmath}
+\begin{bdef}[Regularisation]
+\textbf{Dropout} zeroes random units in training; \textbf{weight decay} adds $\lambda\lVert\theta\rVert^2$ to the loss.
+\end{bdef}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{The training loop in code}
+\begin{columns}[T]
+\column{0.55\textwidth}
+\begin{bcode}
+\begin{lstlisting}
+w = torch.tensor(3.0, requires_grad=True)
+((2 * w - 4) ** 2).backward(); w.grad   # tensor(8.)
+
+mlp = nn.Sequential(nn.Linear(784, 256), nn.ReLU(), nn.Dropout(0.2),
+                    nn.Linear(256, 128), nn.ReLU(), nn.Linear(128, 10))
+opt = torch.optim.Adam(mlp.parameters(), lr=1e-3)
+for xb, yb in batches:
+    loss = F.cross_entropy(mlp(xb), yb)
+    opt.zero_grad(); loss.backward(); opt.step()
+\end{lstlisting}
+\end{bcode}
+\column{0.41\textwidth}
+\begin{bres}
+Autograd: $\frac{d}{dw}(2w-4)^2=8$ at $w=3$ \checkmark\\[2pt]
+MLP: \textbf{87.1\% test accuracy} after 5 epochs; test loss $0.464\rightarrow0.357$.
+\end{bres}
+\begin{bapp}
+Image tagging in e-commerce (Fashion-MNIST comes from Zalando's catalogue); frameworks: PyTorch, TensorFlow, JAX.
+\end{bapp}
 \end{columns}
 \end{frame}
 
 \begin{frame}{Reading loss curves}
-\centering\includegraphics[width=0.78\linewidth]{s2_mlp_curves.png}\\
-\small Train loss falling while test loss rises $\Rightarrow$ memorising. Regularise, augment, or stop earlier.
+\centering\includegraphics[width=0.74\linewidth]{s2_mlp_curves.png}
+\begin{bwarn}
+Train loss falling while test loss rises means memorising: add regularisation or augmentation, or stop earlier.
+\end{bwarn}
 \end{frame}
 
-\hourslide{7}{TEACH}{CNNs, augmentation and mixed precision}{CIFAR-10 (10,000-image split)}{CNN design, augmentation, AMP training}
+%% =====================================================================
+\hourslide{7}{TEACH}{Convolutional networks, augmentation, mixed precision}{CIFAR-10 (10,000-image split)}{CNN design, augmentation, AMP training}
 
-\begin{frame}{Why convolutions work on images}
+\begin{frame}{Convolution}
+\begin{bdef}[Convolutional layer]
+A small filter (e.g.\ $3\times3$) slides over the image and computes a weighted sum at each position. The same weights are used everywhere (\emph{weight sharing}) and each output sees only a small patch (\emph{locality}).
+\end{bdef}
+\begin{columns}[T]
+\column{0.55\textwidth}
+\begin{bmath}[Formulas]
+$S(i,j)=\sum_m\sum_n I(i+m,\,j+n)\,K(m,n)+b$\\[3pt]
+Output size $=\left\lfloor\frac{W-K+2P}{S}\right\rfloor+1$\\[3pt]
+Parameters $=K\cdot K\cdot C_{in}\cdot C_{out}+C_{out}$
+\end{bmath}
+\column{0.41\textwidth}
+\begin{bex}[Worked example]
+$32\times32$ input, $K=3$, $P=1$, $S=1$ $\Rightarrow$ $32\times32$ output.\\
+3 $\rightarrow$ 32 channels: $3\cdot3\cdot3\cdot32+32=896$ parameters (a dense layer would need 3 million).
+\end{bex}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Pooling, batch normalisation, augmentation}
 \begin{columns}[T]
 \column{0.5\textwidth}
-\begin{itemize}
-\item \textbf{Weight sharing:} one filter everywhere
-\item \textbf{Locality:} each filter sees a small patch
-\item Conv $\rightarrow$ BatchNorm $\rightarrow$ ReLU $\rightarrow$ Pool
-\item Edges $\rightarrow$ textures $\rightarrow$ parts $\rightarrow$ objects
-\end{itemize}
-\begin{block}{Augmentation}
-Random flips + shifted crops: learn the object, not the pixels.
-\end{block}
+\begin{bdef}[Pooling]
+Max-pooling keeps the largest value in each $2\times2$ window, halving height and width.
+\end{bdef}
+\begin{bmath}[Batch normalisation]
+$\hat x=\dfrac{x-\mu_B}{\sqrt{\sigma_B^2+\epsilon}},\qquad y=\gamma\hat x+\beta$
+\end{bmath}
+\begin{bdef}[Mixed precision]
+Run maths in 16-bit (bfloat16) where safe: faster and lighter, nearly the same predictions.
+\end{bdef}
 \column{0.46\textwidth}
-\begin{exampleblock}{Our run}
-289,194-parameter CNN, 8 epochs on 8,000 images:\\ \textbf{$\approx$67\% held-out accuracy}\\[3pt]
-bfloat16 vs fp32: same prediction on \textbf{99.0\%} of images
-\end{exampleblock}
-\begin{alertblock}{Leakage}
-Normalise with \emph{training} mean and std only.
-\end{alertblock}
+\begin{balgo}[A CNN block stack]
+\begin{algorithmic}[1]
+\For{channels $c\in\{32,64,128\}$}
+  \State Conv $3\times3$ $\rightarrow$ BatchNorm $\rightarrow$ ReLU
+  \State Conv $3\times3$ $\rightarrow$ BatchNorm $\rightarrow$ ReLU
+  \State MaxPool $2\times2$
+\EndFor
+\State Global average pool $\rightarrow$ Dropout $\rightarrow$ Linear
+\end{algorithmic}
+\end{balgo}
+\begin{bdef}[Augmentation]
+Random flips and shifted crops: the model learns the object, not the pixels.
+\end{bdef}
 \end{columns}
 \end{frame}
 
-\hourslide{8}{BUILD}{LeafDoctor: data pipeline and leakage checks}{PlantVillage, 4 apple classes, 3,171 images}{Image datasets, stratified splits, leakage checks}
-
-\begin{frame}{Clean data before you train}
-\centering\includegraphics[width=0.62\linewidth]{s2_leaf_samples.png}
+\begin{frame}[fragile]{CNN in code, result and products}
 \begin{columns}[T]
-\column{0.48\textwidth}
-\begin{enumerate}
-\item Hash every image
-\item De-duplicate \emph{before} splitting
-\item Stratified 70 / 15 / 15
-\item Verify: zero train--test overlap
-\end{enumerate}
-\column{0.48\textwidth}
-\begin{exampleblock}{Our run}
-\small 7 duplicates; 1 had leaked into test.\\ After fix: 3,164 images, 2,214 / 475 / 475, \textbf{0 overlap}.
-\end{exampleblock}
+\column{0.52\textwidth}
+\begin{bcode}
+\begin{lstlisting}
+layers += [nn.Conv2d(cin, c, 3, padding=1),
+           nn.BatchNorm2d(c), nn.ReLU(),
+           nn.Conv2d(c, c, 3, padding=1),
+           nn.BatchNorm2d(c), nn.ReLU(),
+           nn.MaxPool2d(2)]
+with torch.autocast("cpu", dtype=torch.bfloat16):
+    loss = F.cross_entropy(model(augment(xb)), yb)
+\end{lstlisting}
+\end{bcode}
+\begin{bres}
+289,194 parameters, 8 epochs, 8,000 images: \textbf{$\approx$67\%} held-out accuracy. bfloat16 agrees with fp32 on \textbf{99.0\%}.
+\end{bres}
+\column{0.44\textwidth}
+\begin{bapp}
+\begin{itemize}
+\item Photo search and visual search (Google Lens, Apple Photos)
+\item Medical imaging: diabetic-retinopathy and X-ray screening
+\item Factory visual inspection
+\item Driver-assistance camera perception
+\end{itemize}
+\end{bapp}
+\begin{bwarn}
+Normalise with \emph{training} mean and std only.
+\end{bwarn}
 \end{columns}
 \end{frame}
 
-\hourslide{9}{BUILD}{CNN vs tiny Vision Transformer, Grad-CAM}{PlantVillage apple subset}{Vision Transformers, Grad-CAM, error analysis}
+%% =====================================================================
+\hourslide{8}{BUILD}{LeafDoctor: image pipeline and leakage checks}{PlantVillage, 4 apple classes, 3,171 images}{Datasets, DataLoaders, stratified splits, leakage checks}
 
-\begin{frame}{Same data, two architectures}
+\begin{frame}{Data pipelines and leakage}
 \begin{columns}[T]
 \column{0.5\textwidth}
-\renewcommand{\arraystretch}{1.25}
+\begin{bdef}[Data pipeline]
+Read $\rightarrow$ decode $\rightarrow$ resize $\rightarrow$ normalise $\rightarrow$ batch. In PyTorch: a \texttt{Dataset} returns one item, a \texttt{DataLoader} batches and shuffles.
+\end{bdef}
+\begin{bdef}[Data leakage]
+Information from the test set reaching training --- e.g.\ the \emph{same photo} in both. Scores look great and mean nothing.
+\end{bdef}
+\begin{bmath}[Stratified split]
+Each class keeps its share: $\frac{n_c^{train}}{n^{train}}\approx\frac{n_c^{test}}{n^{test}}\approx\frac{n_c}{n}$
+\end{bmath}
+\column{0.46\textwidth}
+\begin{balgo}[Leakage-safe split]
+\begin{algorithmic}[1]
+\For{each image}
+  \State $h\gets$ MD5 hash of its pixels
+\EndFor
+\State keep the first image of each hash
+\State stratified split 70 / 15 / 15
+\State \textbf{assert} no hash in both train and test
+\end{algorithmic}
+\end{balgo}
+\centering\includegraphics[width=\linewidth]{s2_leaf_samples.png}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Code, result and products}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\begin{bcode}
+\begin{lstlisting}
+hashes = [hashlib.md5(img.tobytes()).hexdigest()
+          for img in images]
+keep = first_index_per_unique(hashes)
+tr, tmp = train_test_split(keep, test_size=0.30,
+                           stratify=y[keep])
+va, te = train_test_split(tmp, test_size=0.50,
+                          stratify=y[tmp])
+\end{lstlisting}
+\end{bcode}
+\column{0.44\textwidth}
+\begin{bres}
+7 duplicates; before the fix 1 leaked into test. After: 3,164 images, 2,214 / 475 / 475, \textbf{0 overlap}.
+\end{bres}
+\begin{bapp}
+Crop-diagnosis apps such as Plantix and PlantNet; farm advisory services; the same pipeline serves medical and retail images.
+\end{bapp}
+\begin{bwarn}
+Plain lab backgrounds invite shortcut learning.
+\end{bwarn}
+\end{columns}
+\end{frame}
+
+%% =====================================================================
+\hourslide{9}{BUILD}{Vision Transformer, Grad-CAM and error analysis}{PlantVillage apple subset}{Vision Transformers, Grad-CAM, confusion matrices}
+
+\begin{frame}{Vision Transformer (ViT)}
+\begin{bdef}[ViT]
+Cut the image into patches, treat each patch as a word-like token, and process the sequence with a Transformer encoder. Self-attention lets every patch look at every other patch.
+\end{bdef}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{bmath}[Tokens]
+Patches $N=\frac{H}{P}\cdot\frac{W}{P}$; \;$64\times64$ image, $P=8$ $\Rightarrow$ 64 tokens\\[2pt]
+$z_0=[x_{cls};\,x_1E;\,\dots;\,x_NE]+E_{pos}$
+\end{bmath}
+\column{0.46\textwidth}
+\begin{balgo}[ViT forward pass]
+\begin{algorithmic}[1]
+\State split into patches, embed each
+\State prepend \texttt{[CLS]}, add positions
+\State $L$ encoder blocks (attention + MLP)
+\State classify from \texttt{[CLS]}
+\end{algorithmic}
+\end{balgo}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{CNN versus ViT}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{bcode}
+\begin{lstlisting}
+self.patch = nn.Conv2d(3, dim, 8, stride=8)
+t = self.patch(x).flatten(2).transpose(1, 2)
+t = torch.cat([self.cls.expand(B, -1, -1), t], 1)
+t = self.encoder(t + self.pos)
+return self.head(self.norm(t[:, 0]))
+\end{lstlisting}
+\end{bcode}
+\begin{bres}
 \begin{tabular}{lrr}
-\toprule
 Model & Params & Test acc\\
-\midrule
 Small CNN & 162,748 & \textbf{0.987}\\
 Tiny ViT & 324,580 & 0.943\\
-\bottomrule
-\end{tabular}\\[8pt]
-\textbf{ViT:} $8\times8$ patches $\rightarrow$ 64 tokens + \texttt{[CLS]} $\rightarrow$ Transformer encoder
+\end{tabular}
+\end{bres}
 \column{0.46\textwidth}
-\begin{block}{Inductive bias}
-CNNs assume locality --- great for small data. ViTs need more data or \textbf{pretraining}.
-\end{block}
-\small In class: \texttt{timm.create\_model( "efficientnet\_b0", pretrained=True, num\_classes=4)}
+\begin{bdef}[Inductive bias]
+Built-in assumptions. CNNs assume locality --- good with small data. ViTs assume little, so they need more data or \textbf{pretraining}.
+\end{bdef}
+\begin{bapp}
+ViTs and their descendants power many image models in foundation-model products; in class fine-tune a pretrained model with \texttt{timm} or Hugging Face.
+\end{bapp}
 \end{columns}
 \end{frame}
 
-\begin{frame}{Grad-CAM: where is the model looking?}
-\centering\includegraphics[width=0.66\linewidth]{s2_gradcam.png}\\
-\small Scab and black rot: heat on lesions \checkmark \quad Healthy and rust: heat on edge and background --- \alert{shortcut warning}
+\begin{frame}{Grad-CAM: seeing what the model sees}
+\begin{columns}[T]
+\column{0.42\textwidth}
+\begin{bdef}[Grad-CAM]
+A heat map of the image regions that raised the score of the predicted class.
+\end{bdef}
+\begin{bmath}[Formula]
+$\alpha_k=\frac{1}{Z}\sum_{i,j}\frac{\partial y^c}{\partial A^k_{ij}}$\\[2pt]
+$L^c=\mathrm{ReLU}\big(\sum_k\alpha_kA^k\big)$
+\end{bmath}
+\begin{balgo}[Grad-CAM]
+\begin{algorithmic}[1]
+\State forward; keep last conv maps $A^k$
+\State backward from class score $y^c$
+\State average gradients $\rightarrow\alpha_k$
+\State weighted sum, ReLU, upsample
+\end{algorithmic}
+\end{balgo}
+\column{0.54\textwidth}\centering\includegraphics[width=\linewidth]{s2_gradcam.png}
+\begin{bwarn}
+Healthy and rust leaves: heat on edges and background --- shortcut learning.
+\end{bwarn}
+\end{columns}
 \end{frame}
 
-\hourslide{10}{BUILD}{Robustness, INT8, ONNX, model card}{PlantVillage + simulated field conditions}{ONNX, quantisation, model cards, distribution shift}
+%% =====================================================================
+\hourslide{10}{BUILD}{Robustness, quantisation, ONNX, model card}{PlantVillage + simulated field conditions}{Distribution shift, quantisation, ONNX, model cards}
 
-\begin{frame}{Lab accuracy is not field accuracy}
+\begin{frame}{Distribution shift and robustness}
 \begin{columns}[T]
-\column{0.5\textwidth}
-\renewcommand{\arraystretch}{1.2}
+\column{0.48\textwidth}
+\begin{bdef}[Distribution shift]
+Deployment data differs from training data. \emph{Covariate shift}: $p_{train}(x)\neq p_{field}(x)$ while the label rule stays the same.
+\end{bdef}
+\begin{balgo}[Robustness test]
+\begin{algorithmic}[1]
+\For{each shift $s$: dark, blur, noise, rotate}
+  \State $X_s\gets s(X_{test})$
+  \State accuracy$_s\gets$ evaluate$(f, X_s)$
+\EndFor
+\State report the worst case, not just clean
+\end{algorithmic}
+\end{balgo}
+\column{0.48\textwidth}
+\begin{bres}
 \begin{tabular}{lrr}
-\toprule
 Condition & CNN & ViT\\
-\midrule
 Clean & 0.987 & 0.943\\
 Darker $\times0.6$ & 0.657 & 0.509\\
 Blur & 0.851 & 0.952\\
 Noise $\sigma{=}0.08$ & \alert{\textbf{0.200}} & \textbf{0.918}\\
 Rotate 90$^\circ$ & 0.958 & 0.916\\
-\bottomrule
 \end{tabular}
+\end{bres}
+\begin{bwarn}
+The ``best'' model collapses to 20\% with mild noise. Lab accuracy $\neq$ field accuracy.
+\end{bwarn}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Quantisation and ONNX}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{bdef}[Quantisation]
+Store weights as 8-bit integers instead of 32-bit floats: about $4\times$ smaller, faster on phones.
+\end{bdef}
+\begin{bmath}[Affine quantisation]
+$q=\mathrm{round}(x/s)+z,\qquad x\approx s\,(q-z)$
+\end{bmath}
+\begin{bex}[Example]
+Weights in $[-1,1]$, 256 levels: $s=2/255\approx0.0078$; $x=0.5\rightarrow q=64$ (with $z=0$).
+\end{bex}
 \column{0.46\textwidth}
-\begin{alertblock}{The day's most important result}
-The ``best'' model collapses to 20\% with mild noise.
-\end{alertblock}
-\begin{block}{Fixes}
-Noise/brightness/blur augmentation $\cdot$ real field photos $\cdot$ a ``not sure'' answer
+\begin{bcode}
+\begin{lstlisting}
+q = torch.ao.quantization.quantize_dynamic(
+        vit, ff_layers, dtype=torch.qint8)
+torch.onnx.export(cnn, x, "leafdoctor.onnx",
+        input_names=["image"], opset_version=17)
+sess = onnxruntime.InferenceSession("leafdoctor.onnx")
+\end{lstlisting}
+\end{bcode}
+\begin{bres}
+INT8 ViT: 1,286 $\rightarrow$ 860 KB, accuracy unchanged (0.943). ONNX CNN: 637 KB, identical predictions.
+\end{bres}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Model cards and on-device AI}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{bdef}[Model card]
+A short document that travels with a model: task, data, performance, robustness, known limits, intended use and out-of-scope use.
+\end{bdef}
+\begin{bex}[LeafDoctor card, in brief]
+Test accuracy 0.987 on lab photos; 0.200--0.987 under shifts; four apple classes only; offers ``not sure''; not a substitute for an agronomist.
+\end{bex}
+\column{0.46\textwidth}
+\begin{bapp}
+\begin{itemize}
+\item On-device vision: offline translation and visual search on phones
+\item Edge cameras in farms and factories
+\item Runtimes: ONNX Runtime, TensorFlow Lite, Core ML
+\end{itemize}
+\end{bapp}
+\begin{block}{Fixes to try}
+Noise / brightness augmentation $\cdot$ real field photos $\cdot$ confidence threshold
 \end{block}
 \end{columns}
 \end{frame}
 
-\begin{frame}{Shrink, export, document}
+%% =====================================================================
+\begin{frame}{Formula sheet --- Sunday 2}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabularx}{\linewidth}{l X}
+\toprule
+Neuron / softmax & $a=\varphi(w^\top x+b)$, \; $p_c=e^{z_c}/\sum_k e^{z_k}$\\
+Cross-entropy & $L=-\log p_y$\\
+Adam & $m_t,v_t$ moving averages; $\theta\leftarrow\theta-\eta\,\hat m_t/(\sqrt{\hat v_t}+\epsilon)$\\
+Convolution size & $\lfloor (W-K+2P)/S\rfloor+1$; \; params $K^2C_{in}C_{out}+C_{out}$\\
+Batch-norm & $y=\gamma\,(x-\mu_B)/\sqrt{\sigma_B^2+\epsilon}+\beta$\\
+ViT tokens & $N=HW/P^2$\\
+Grad-CAM & $L^c=\mathrm{ReLU}(\sum_k\alpha_kA^k)$\\
+Quantisation & $q=\mathrm{round}(x/s)+z$\\
+\bottomrule
+\end{tabularx}
+\end{frame}
+
+\begin{frame}{Check yourself}
+\begin{enumerate}
+\item What happens to a deep network if you remove every activation function?
+\item A $64\times64$ RGB image goes through a $3\times3$ conv with 16 filters, padding 1, stride 2. Output size and parameter count?
+\item Why can one duplicate photo across train and test inflate accuracy?
+\item Why did the ViT beat the CNN under noise but lose on clean images?
+\item What does INT8 quantisation trade, and what did it cost us here?
+\end{enumerate}
+\begin{bex}[Answers]
+1. It becomes one linear model. \;2. $32\times32\times16$; $3\cdot3\cdot3\cdot16+16=448$. \;3. The model is scored on an image it memorised. \;4. Different inductive bias: global attention is less sensitive to pixel noise; the CNN fits local texture better on clean lab data. \;5. Precision for size and speed; accuracy stayed 0.943.
+\end{bex}
+\end{frame}
+
+\begin{frame}{Glossary and submission}
 \begin{columns}[T]
-\column{0.5\textwidth}
-\begin{exampleblock}{Our run}
-INT8 ViT: 1,286 KB $\rightarrow$ 860 KB, accuracy 0.943 $\rightarrow$ 0.943\\[3pt]
-ONNX CNN: 637 KB, max logit difference $2.4\times10^{-6}$, identical predictions
-\end{exampleblock}
-\column{0.46\textwidth}
-\begin{block}{Model card}
-Task $\cdot$ data $\cdot$ performance $\cdot$ robustness range $\cdot$ known limits $\cdot$ intended use $\cdot$ deployment format
-\end{block}
-\end{columns}
-\vspace{8pt}
+\column{0.52\textwidth}
+\begin{bdef}[Glossary]
+\textbf{Epoch} one pass over the data $\cdot$ \textbf{Batch} examples per update $\cdot$ \textbf{Autograd} automatic gradients $\cdot$ \textbf{Kernel} conv filter $\cdot$ \textbf{Augmentation} random training variations $\cdot$ \textbf{ViT} Vision Transformer $\cdot$ \textbf{Grad-CAM} class heat map $\cdot$ \textbf{ONNX} portable model format
+\end{bdef}
+\column{0.44\textwidth}
 \begin{block}{Submit by 18:00 --- P2 LeafDoctor}
 Notebook $\cdot$ ONNX model $\cdot$ Grad-CAM gallery $\cdot$ robustness table $\cdot$ \texttt{MODEL\_CARD.md} $\rightarrow$ tag \texttt{sunday-2} $\rightarrow$ Release $\rightarrow$ submit
 \end{block}
+\end{columns}
 \end{frame}
 \end{document}

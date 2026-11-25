@@ -82,6 +82,8 @@ Same structure at every campus, in local time.
 
 Every Sunday has **student notes**, **Beamer slides** (PDF + LaTeX source) and a **Jupyter notebook that has already been run**, so you can read the real outputs before running it yourself.
 
+**Slides teach every topic from the foundations, in the same colour-coded order:** 🟦 Definition → 🟩 Example → 🟪 Mathematics → 🟨 Algorithm → ⬜ Code → 🟧 Applications & real products → Our notebook result (plus ❗ pitfalls), and each deck ends with a formula sheet, a self-check quiz with answers and a glossary.
+
 | Sunday | Topic | Notes | Slides | Notebook | Project |
 |---|---|---|---|---|---|
 | 🟢 1 | [Data & ML Foundations](sunday-01-data-ml/) | [PDF](sunday-01-data-ml/notes/S01_Notes.pdf) · [tex](sunday-01-data-ml/notes/S01_Notes.tex) | [PDF](sunday-01-data-ml/slides/S01_Slides.pdf) · [tex](sunday-01-data-ml/slides/S01_Slides.tex) | [ipynb](sunday-01-data-ml/notebooks/S01_Data_ML_Foundations.ipynb) · [Colab](https://colab.research.google.com/github/drssnaiml1-cell/algoprofessor-ai-scientist/blob/main/sunday-01-data-ml/notebooks/S01_Data_ML_Foundations.ipynb) | P1 Churn Intelligence |
@@ -301,6 +303,12 @@ git push origin sunday-2
 **Applications:** cto@algoprofessor.com · **Director:** ceo@algoprofessor.com · **Web:** [www.algoprofessor.com](https://www.algoprofessor.com)
 
 ---
+
+### Contributors
+| | Contributor | Role |
+|---|---|---|
+| <img src="assets/logo_icon.png" width="40"/> | **AlgoProfessor** — Dr S Satyanarayana ([@drssnaiml1-cell](https://github.com/drssnaiml1-cell)) | Course design, syllabus, direction and review |
+| 🤖 | **Claude** ([@claude](https://github.com/claude)) | Co-author: notebooks, notes, slides, website |
 
 ### Course Director
 **Dr S Satyanarayana Ph.D., PDF(AI), FARSC**  

@@ -8,144 +8,387 @@
 \begin{document}
 \begin{frame}[plain]\titlepage\end{frame}
 
+\begin{frame}{Learning objectives}
+\begin{columns}[T]
+\column{0.55\textwidth}
+By 18:00 today you can:
+\begin{enumerate}
+\item Define an agent and model it as a decision loop
+\item Give an agent tools through function calling and MCP
+\item Build a planner--executor--critic graph with guardrails
+\item Integrate external APIs with rate limits, retries and citations
+\item Run model-written code safely in a sandbox
+\item Evaluate agents: success, cost, failures, human approval
+\end{enumerate}
+\column{0.4\textwidth}
+\begin{bdef}[Prerequisites]
+Sunday 3 (LLMs, structured output) and Sunday 4 (retrieval, abstention).
+\end{bdef}
+\begin{bapp}[Project of the day]
+\textbf{P5 --- ScholarAgent}: searches papers, writes a cited literature summary, and runs code safely.
+\end{bapp}
+\end{columns}
+\end{frame}
+
+\legendframe
+
 \begin{frame}{Today at a glance}
 \renewcommand{\arraystretch}{1.25}
 \begin{tabularx}{\linewidth}{c c X l}
 \toprule
 \textbf{Hour} & \textbf{Mode} & \textbf{Focus} & \textbf{Dataset}\\
 \midrule
-21 & \teachtag & Tool use, function calling, ReAct, MCP & \ds{Syllabus multi-hop}\\
-22 & \teachtag & Planner $\rightarrow$ executor $\rightarrow$ critic, guardrails & \ds{GSM8K (1,319)}\\
-23 & \buildtag & ScholarAgent: cited literature summary & \ds{arXiv / offline index}\\
+21 & \teachtag & Agents, function calling, ReAct, MCP & \ds{Syllabus multi-hop}\\
+22 & \teachtag & Agent graphs, memory, self-critique, guardrails & \ds{GSM8K (1,319)}\\
+23 & \buildtag & API tools, rate limits, retries, citations & \ds{arXiv / offline index}\\
 24 & \buildtag & Sandboxed code execution & \ds{UCI Adult}\\
-25 & \buildtag & Evals, traces, cost, human approval & \ds{12-task suite}\\
+25 & \buildtag & Agent evaluation, tracing, cost, human approval & \ds{12-task suite}\\
 \bottomrule
 \end{tabularx}
-\vspace{6pt}
-\begin{block}{By 18:00 today}
-P5 --- ScholarAgent on GitHub, tagged \texttt{sunday-5}.
-\end{block}
 \end{frame}
 
-\hourslide{21}{TEACH}{Tool use, function calling and ReAct}{Multi-hop questions over the syllabus PDF}{Function calling, ReAct prompting, MCP tools}
+%% =====================================================================
+\hourslide{21}{TEACH}{Agents, function calling, ReAct and MCP}{Multi-hop questions over the syllabus PDF}{Function calling, ReAct prompting, MCP tools}
 
-\begin{frame}{Reason $\rightarrow$ Act $\rightarrow$ Observe}
+\begin{frame}{What is an AI agent?}
+\begin{bdef}[Agent]
+A system in which a model decides, step by step, which action to take --- call a tool, read the result, decide again --- until it reaches a goal or a limit. \textbf{Agent = model + tools + loop + memory + guardrails.}
+\end{bdef}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\begin{bmath}[The agent as a decision loop]
+State $s_t=(\text{goal},\,\text{history }h_{<t})$\\
+Action $a_t\sim\pi(a\mid s_t)$, \; $a_t\in\text{Tools}\cup\{\text{answer}\}$\\
+Observation $o_t=\text{tool}(a_t)$, \; $s_{t+1}=s_t\oplus(a_t,o_t)$\\
+Stop when $a_t=\text{answer}$ or $t=T_{max}$
+\end{bmath}
+\column{0.44\textwidth}
+\begin{bex}[Chatbot vs agent]
+A chatbot \emph{answers} ``What is the fee in dollars?'' from memory. An agent \emph{searches} the fee, \emph{calls} a calculator, then answers --- with evidence.
+\end{bex}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Function calling and the ReAct loop}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{bdef}[Function calling]
+The model outputs a structured call, e.g.\ \texttt{\{"tool": "lookup\_hour", "args": \{"hour": 6\}\}}. Your code validates and runs it, then returns the result. The model never executes anything itself.
+\end{bdef}
+\begin{bdef}[Tool schema]
+Name, description, and a JSON Schema for the arguments --- the model reads these to decide what to call.
+\end{bdef}
+\column{0.46\textwidth}
+\begin{balgo}[ReAct]
+\begin{algorithmic}[1]
+\Require question $q$, tools, $T_{max}$
+\State history $\gets[\,]$
+\For{$t=1$ to $T_{max}$}
+  \State thought, action $\gets$ model$(q$, history$)$
+  \If{action is ``answer''} \State \Return answer \EndIf
+  \State obs $\gets$ run tool(action)
+  \State append (thought, action, obs)
+\EndFor
+\State \Return ``stopped: step limit''
+\end{algorithmic}
+\end{balgo}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Tools in code, MCP, and our result}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\begin{bcode}
+\begin{lstlisting}
+def calculator(expression: str) -> float:
+    # parse arithmetic only -- never eval()
+    return ev(ast.parse(expression, mode="eval").body)
+TOOLS = {"lookup_hour": {"fn": lookup_hour,
+  "parameters": {"properties":
+     {"hour": {"type": "integer"}}}}}
+\end{lstlisting}
+\end{bcode}
+\begin{bdef}[MCP --- Model Context Protocol]
+Open standard (from Anthropic) that exposes tools to any AI client.
+\end{bdef}
+\column{0.44\textwidth}
+\begin{bres}
+``LeafDoctor is which Sunday, and its hour-1 dataset?'' $\rightarrow$ \texttt{search} finds Sunday 2 $\rightarrow$ \texttt{lookup\_hour(6)} $\rightarrow$ Fashion-MNIST.\\
+Fee: INR 50,000 / 83.5 $\approx$ US\$\,599.\\
+\texttt{\_\_import\_\_('os')...} $\rightarrow$ \textbf{blocked}.
+\end{bres}
+\begin{bapp}
+Coding agents (Claude Code, GitHub Copilot agent mode), support agents that look up orders, travel and booking assistants.
+\end{bapp}
+\end{columns}
+\end{frame}
+
+%% =====================================================================
+\hourslide{22}{TEACH}{Agent graphs, memory, self-critique and guardrails}{GSM8K test set (1,319 problems)}{State machines, self-critique, memory, guardrails}
+
+\begin{frame}{Multi-agent graphs}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{bdef}[Agent graph]
+Nodes are agents or steps; edges decide what runs next based on a shared state. Gives control, loops with limits, and an audit trail.
+\end{bdef}
+\begin{bmath}[State machine]
+$G=(N,\,E,\,s_0)$, \; node $n:\;s\mapsto s'$\\
+router $r_n:\;s'\mapsto$ next node or END\\
+run: $s_{k+1}=n_k(s_k)$, \; $n_{k+1}=r_{n_k}(s_{k+1})$
+\end{bmath}
+\begin{bdef}[Memory]
+\textbf{Short-term}: the current state. \textbf{Long-term}: stored results reused later (here: every verdict).
+\end{bdef}
+\column{0.46\textwidth}
 \begin{center}
-\begin{tikzpicture}[node distance=0.6cm and 1.2cm, every node/.style={font=\small,rounded corners,minimum width=2.4cm,minimum height=0.9cm}]
-\node[fill=sun,text=white] (r) {Reason};
-\node[fill=gold,text=navy,right=of r] (a) {Act: call a tool};
-\node[fill=dataC,text=white,right=of a] (o) {Observe};
-\node[fill=navy,text=gold,right=of o] (f) {Final answer};
-\draw[-{Stealth},thick,navy] (r)--(a); \draw[-{Stealth},thick,navy] (a)--(o); \draw[-{Stealth},thick,gold] (o)--(f);
-\draw[-{Stealth},thick,navy] (o.south) -- ++(0,-0.5) -| (r.south);
+\begin{tikzpicture}[every node/.style={font=\small,rounded corners,minimum width=2.4cm,minimum height=0.8cm,align=center}]
+\node[fill=navy,text=gold] (p) at (0,0) {Planner\\extract steps};
+\node[fill=sun,text=white] (e) at (0,-1.4) {Executor\\recompute (tool)};
+\node[fill=gold,text=navy] (c) at (0,-2.8) {Critic\\accept / flag};
+\node[fill=gray!40] (m) at (2.9,-1.4) {Memory};
+\draw[-{Stealth},thick] (p)--(e); \draw[-{Stealth},thick] (e)--(c);
+\draw[-{Stealth},thick,dashed] (c.east) -| (m.south);
 \end{tikzpicture}
 \end{center}
-\begin{columns}[T]
-\column{0.5\textwidth}
-\begin{exampleblock}{Two-hop answer}
-\small \texttt{search} $\rightarrow$ LeafDoctor is Sunday 2\\ \texttt{lookup\_hour(6)} $\rightarrow$ Fashion-MNIST
-\end{exampleblock}
-\column{0.46\textwidth}
-\begin{alertblock}{Safe calculator}
-\small \texttt{\_\_import\_\_('os').system(...)} $\rightarrow$ blocked
-\end{alertblock}
+\begin{bex}[GSM8K trace]
+``16 $-$ 3 $-$ 4 = \texttt{<<16-3-4=9>>}9 eggs'' --- the executor recomputes $16-3-4$ and the critic compares with 9.
+\end{bex}
 \end{columns}
 \end{frame}
 
-\begin{frame}{Structured tools and MCP}
+\begin{frame}[fragile]{Graph in code, result and guardrails}
 \begin{columns}[T]
-\column{0.5\textwidth}
-\begin{block}{Lesson from our first run}
-Free-text search for both hops fetched the wrong page. A structured \texttt{lookup\_hour} tool fixed it.
-\end{block}
-\column{0.46\textwidth}
-\begin{block}{MCP}
-One standard for advertising tools: name, description, JSON input schema. Any MCP client can call them.\\[3pt]
-\small \texttt{@mcp.tool() def search\_syllabus(q): \ldots}
-\end{block}
+\column{0.56\textwidth}
+\begin{bcode}
+\begin{lstlisting}
+g = Graph()
+g.add_node("planner", planner)
+g.add_node("executor", executor)
+g.add_node("critic", critic)
+g.add_edge("planner",
+    lambda s: "executor" if s["plan"] else "END")
+g.add_edge("executor", lambda s: "critic")
+g.add_edge("critic", lambda s: "END")
+\end{lstlisting}
+\end{bcode}
+\begin{bdef}[Guardrails]
+Allowed tools only, argument checks, step and hop limits, approval for risky actions, logging.
+\end{bdef}
+\column{0.4\textwidth}
+\begin{bres}
+1,319 traces: \textbf{1,301 accepted}, 18 no steps, \textbf{0 flagged}.
+\end{bres}
+\begin{bwarn}[First run flagged 6]
+All format noise (\texttt{+8}, \texttt{3/4}), not maths errors.
+\end{bwarn}
+\begin{bapp}
+LangGraph, CrewAI, AutoGen: research assistants, document-review and back-office pipelines.
+\end{bapp}
 \end{columns}
 \end{frame}
 
-\hourslide{22}{TEACH}{Planner, executor, critic}{GSM8K test set (1,319 problems)}{LangGraph-style state machines, self-critique, guardrails}
+%% =====================================================================
+\hourslide{23}{BUILD}{API tools, rate limits, retries and citations}{arXiv API (live in class) / offline index}{API integration, rate limits, citation tracking}
 
-\begin{frame}{An agent team that checks reasoning}
+\begin{frame}{Working with external APIs}
 \begin{columns}[T]
 \column{0.5\textwidth}
-\begin{enumerate}
-\item \textbf{Planner:} extract \texttt{<<16-3-4=9>>} steps
-\item \textbf{Executor:} recompute with the calculator
-\item \textbf{Critic:} accept or flag
-\end{enumerate}
-\begin{exampleblock}{Our run}
-1,301 accepted $\cdot$ 18 no steps $\cdot$ \textbf{0 flagged}\\ 3.25 steps per problem
-\end{exampleblock}
+\begin{bdef}[Rate limit]
+A cap on requests per time window set by the API provider. Exceeding it returns errors (often HTTP 429).
+\end{bdef}
+\begin{bmath}[Token bucket and backoff]
+Bucket capacity $C$, refill $r$ tokens/s: a request may run if tokens $\ge1$.\\[2pt]
+Retry wait $=b\cdot2^{k}$ (+ jitter) after the $k$-th failure: $1, 2, 4, 8$\,s \ldots
+\end{bmath}
+\begin{bdef}[Citation tracking]
+Every claim in the output carries the id of the source it came from.
+\end{bdef}
 \column{0.46\textwidth}
-\begin{alertblock}{First run flagged 6}
-All were format noise (\texttt{+8}, \texttt{3/4}), not maths errors. Inspect failures before trusting a rate.
-\end{alertblock}
-\begin{block}{Guardrails}
-Arithmetic-only tool $\cdot$ step limit $\cdot$ hop limit $\cdot$ memory for audit
-\end{block}
+\begin{balgo}[ScholarAgent]
+\begin{algorithmic}[1]
+\Require topic $q$
+\State try arXiv API (with retries, timeout)
+\If{network fails}
+  \State use offline index; \textbf{say so}
+\EndIf
+\State keep papers with score $\ge\frac12$ best
+\If{none left} \State \Return ``no sources'' \EndIf
+\State write numbered summary, cite $[n]$
+\end{algorithmic}
+\end{balgo}
 \end{columns}
 \end{frame}
 
-\hourslide{23}{BUILD}{ScholarAgent: an AI research-scientist agent}{arXiv API (live in class) / offline index}{API tools, rate limits, citation tracking}
-
-\begin{frame}{Cite only what you retrieved}
+\begin{frame}[fragile]{Code, result and products}
 \begin{columns}[T]
-\column{0.5\textwidth}
-\begin{enumerate}
-\item Search arXiv; on failure use the offline index \emph{and say so}
-\item Keep clearly relevant papers only
-\item Write a numbered, cited summary
-\end{enumerate}
-\column{0.46\textwidth}
-\begin{exampleblock}{Our run}
-\small ``efficient fine-tuning \ldots low rank adaptation'' $\rightarrow$ \emph{LoRA}, Hu et al.\ (2021), arXiv:2106.09685
-\end{exampleblock}
-\begin{alertblock}{Never invent a citation}
-Stop rather than guess when nothing is found.
-\end{alertblock}
+\column{0.52\textwidth}
+\begin{bcode}
+\begin{lstlisting}
+url = "http://export.arxiv.org/api/query?" + \
+      urlencode({"search_query": f"all:{q}",
+                 "max_results": k})
+try:
+    xml = urlopen(url, timeout=8).read()
+    return parse_atom(xml), "arXiv API (live)"
+except Exception as e:
+    return offline_search(q), f"offline index ({e})"
+\end{lstlisting}
+\end{bcode}
+\column{0.44\textwidth}
+\begin{bres}
+``low rank adaptation'' query $\rightarrow$ \emph{LoRA}, Hu et al.\ (2021), arXiv:2106.09685. Without the relevance filter an unrelated paper appeared.
+\end{bres}
+\begin{bwarn}[Never cite what you did not retrieve]
+Cite only tool results; stop when nothing is found.
+\end{bwarn}
+\begin{bapp}
+Research assistants: Elicit, Consensus.
+\end{bapp}
 \end{columns}
 \end{frame}
 
-\hourslide{24}{BUILD}{Sandboxed code-execution agent}{UCI Adult (baseline reproduction)}{Sandboxing, permission boundaries, reproducibility}
+%% =====================================================================
+\hourslide{24}{BUILD}{Sandboxed code execution}{UCI Adult (baseline reproduction)}{Sandboxing, permission boundaries, reproducibility}
 
-\begin{frame}{Defence in depth}
+\begin{frame}{Sandboxing model-written code}
 \begin{columns}[T]
 \column{0.5\textwidth}
-\begin{enumerate}
-\item Static check: no OS, network or \texttt{eval}
-\item Separate isolated process
-\item Memory cap, time limit, empty environment
-\item Production: container with \texttt{--network none}
-\end{enumerate}
+\begin{bdef}[Sandbox]
+An isolated environment where untrusted code runs with limited permissions, resources and network access, so mistakes or attacks cannot harm the host.
+\end{bdef}
+\begin{bdef}[Threat model]
+Delete files $\cdot$ read secrets $\cdot$ exfiltrate data over the network $\cdot$ exhaust memory or CPU $\cdot$ run forever.
+\end{bdef}
+\begin{bmath}[Resource limits]
+memory $\le$ 2\,GB $\cdot$ wall-time $\le$ 60\,s $\cdot$ env $=\varnothing$ $\cdot$ network = none (container)
+\end{bmath}
 \column{0.46\textwidth}
-\begin{exampleblock}{Our run}
-Baseline on Adult: \textbf{0.8515 $\pm$ 0.0023} (5-fold)
-\end{exampleblock}
-\begin{alertblock}{Blocked}
-\texttt{import os} $\cdot$ \texttt{\_\_import\_\_} $\cdot$ a 10-billion-item list (memory limit)
-\end{alertblock}
+\begin{balgo}[Defence in depth]
+\begin{algorithmic}[1]
+\State static check: no \texttt{os}, \texttt{socket}, \texttt{eval}
+\If{check fails} \State \Return refused \EndIf
+\State write code to a temp directory
+\State run isolated process with limits
+\State capture stdout/stderr, enforce timeout
+\State delete the temp directory
+\end{algorithmic}
+\end{balgo}
 \end{columns}
 \end{frame}
 
-\hourslide{25}{BUILD}{Agent evaluation and observability}{12-task agent test suite}{Agent evals, tracing, cost control, human-in-the-loop}
+\begin{frame}[fragile]{Code, result and products}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\begin{bcode}
+\begin{lstlisting}
+if (why := static_check(code)):
+    return {"ok": False, "stderr": why}
+r = subprocess.run([sys.executable, "-I", "-c",
+        limits + f"; exec(open({path!r}).read())"],
+        cwd=tmp, capture_output=True, text=True,
+        timeout=60, env={"PATH": "/usr/bin:/bin"})
+\end{lstlisting}
+\end{bcode}
+\begin{bdef}[Production]
+\texttt{docker run --network none --memory 2g --cpus 1}
+\end{bdef}
+\column{0.44\textwidth}
+\begin{bres}
+Agent job: logistic baseline on Adult, \textbf{0.8515 $\pm$ 0.0023} (5-fold).\\
+\texttt{import os} $\rightarrow$ refused; \texttt{\_\_import\_\_} $\rightarrow$ refused; 10-billion-item list $\rightarrow$ memory limit.
+\end{bres}
+\begin{bapp}
+Code-interpreter features in AI assistants; sandbox services (E2B); isolation layers (Docker, gVisor, Firecracker micro-VMs).
+\end{bapp}
+\end{columns}
+\end{frame}
 
-\begin{frame}{Measure agents like any system}
+%% =====================================================================
+\hourslide{25}{BUILD}{Agent evaluation, tracing, cost and human approval}{12-task agent test suite (GAIA in class)}{Agent evals, tracing, cost control, human-in-the-loop}
+
+\begin{frame}{How to evaluate an agent}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{bdef}[Agent evaluation]
+Run a fixed suite of tasks; record success, steps, tool calls, latency and cost; classify every failure.
+\end{bdef}
+\begin{bmath}[Success rate with uncertainty]
+$\hat p=\frac{\text{successes}}{n}$, \; $\mathrm{SE}=\sqrt{\hat p(1-\hat p)/n}$\\
+$7/12$: $\hat p=0.583\pm0.142$ --- small suites are noisy\\[2pt]
+cost/task $=\frac{\text{tokens}}{1000}\times$ price per 1k tokens
+\end{bmath}
+\column{0.46\textwidth}
+\begin{balgo}[Evaluation harness]
+\begin{algorithmic}[1]
+\For{each task $(q, \text{gold})$ in suite}
+  \State run agent with tracing on
+  \State record steps, tools, ms, tokens
+  \State classify the outcome
+\EndFor
+\State report rates, cost, taxonomy
+\end{algorithmic}
+\end{balgo}
+\begin{bdef}[Tracing and human-in-the-loop]
+Log every step as a \emph{span} (tool, args, latency, tokens). Irreversible actions (send, pay, delete) wait for a person's approval.
+\end{bdef}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Our result and products}
 \begin{columns}[c]
 \column{0.5\textwidth}\centering\includegraphics[width=\linewidth]{s5_agent_outcomes.png}
+\begin{bres}
+Success \textbf{7/12} $\cdot$ mis-extracted 4 $\cdot$ answered an unanswerable question 1 $\cdot$ 1.5 steps/task $\cdot$ under 1 US cent.\\
+\texttt{send\_email} $\rightarrow$ \texttt{PENDING\_APPROVAL}.
+\end{bres}
 \column{0.46\textwidth}
-\begin{exampleblock}{Our run}
-Success \textbf{7/12} $\cdot$ mis-extracted 4 $\cdot$ answered an unanswerable question 1 $\cdot$ 1.5 steps per task $\cdot$ $<$1 US cent
-\end{exampleblock}
-\begin{block}{Human approval}
-\texttt{send\_email} $\rightarrow$ \texttt{PENDING\_APPROVAL}
+\begin{bwarn}[First improvement ticket]
+Add Sunday 4's coverage-based abstention as a guardrail, so the agent refuses the hostel-fee question.
+\end{bwarn}
+\begin{bapp}
+Tracing: Langfuse, LangSmith. Benchmarks: GAIA (general assistants), SWE-bench (coding agents).
+\end{bapp}
+\end{columns}
+\end{frame}
+
+%% =====================================================================
+\begin{frame}{Formula sheet --- Sunday 5}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabularx}{\linewidth}{l X}
+\toprule
+Agent loop & $a_t\sim\pi(a\mid s_t)$, \; $o_t=\mathrm{tool}(a_t)$, \; $s_{t+1}=s_t\oplus(a_t,o_t)$\\
+Graph run & $s_{k+1}=n_k(s_k)$, \; $n_{k+1}=r_{n_k}(s_{k+1})$\\
+Backoff & wait $=b\cdot2^{k}$ (+ jitter)\\
+Success rate & $\hat p\pm\sqrt{\hat p(1-\hat p)/n}$\\
+Cost per task & tokens / 1000 $\times$ price\\
+\bottomrule
+\end{tabularx}
+\end{frame}
+
+\begin{frame}{Check yourself}
+\begin{enumerate}
+\item What is the difference between a chatbot and an agent?
+\item Why should a calculator tool parse expressions rather than call \texttt{eval()}?
+\item After 3 failed API calls with base 1\,s, how long is the next backoff?
+\item Your agent succeeds on 9 of 12 tasks. Give the success rate and its standard error.
+\item Which actions should always require human approval?
+\end{enumerate}
+\begin{bex}[Answers]
+1. An agent chooses and runs tools in a loop toward a goal. \;2. \texttt{eval} runs arbitrary code (files, network). \;3. $1\cdot2^3=8$\,s. \;4. $0.75\pm0.125$. \;5. Irreversible or external ones: sending, paying, deleting, publishing.
+\end{bex}
+\end{frame}
+
+\begin{frame}{Glossary and submission}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\begin{bdef}[Glossary]
+\textbf{Agent} model + tools + loop $\cdot$ \textbf{Function calling} structured tool requests $\cdot$ \textbf{ReAct} reason--act--observe $\cdot$ \textbf{MCP} tool protocol $\cdot$ \textbf{Guardrail} hard limit around a model $\cdot$ \textbf{Sandbox} isolated execution $\cdot$ \textbf{Span} one traced step $\cdot$ \textbf{HITL} human approval
+\end{bdef}
+\column{0.44\textwidth}
+\begin{block}{Submit by 18:00 --- P5 ScholarAgent}
+Notebook $\cdot$ tools module $\cdot$ test suite + results $\cdot$ trace log $\rightarrow$ tag \texttt{sunday-5} $\rightarrow$ Release $\rightarrow$ submit
 \end{block}
 \end{columns}
-\vspace{4pt}
-\begin{block}{Submit by 18:00 --- P5 ScholarAgent}
-Notebook $\cdot$ tools module $\cdot$ test suite + results $\cdot$ trace log $\rightarrow$ tag \texttt{sunday-5}
-\end{block}
 \end{frame}
 \end{document}

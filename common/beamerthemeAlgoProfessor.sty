@@ -10,6 +10,8 @@
 \RequirePackage{booktabs,tabularx}
 \RequirePackage{listings}
 \RequirePackage[most]{tcolorbox}
+\RequirePackage{amsmath,amssymb}
+\RequirePackage{algpseudocode}
 \usefonttheme{serif}
 \renewcommand{\sfdefault}{\rmdefault}
 \renewcommand{\ttdefault}{\rmdefault}
@@ -104,4 +106,38 @@
   keywordstyle=\color{navy}\bfseries,commentstyle=\color{dataC}\itshape,stringstyle=\color{warnC},breaklines=true,
   showstringspaces=false,columns=fullflexible,language=Python,upquote=true,xleftmargin=6pt,framexleftmargin=4pt}
 \lstset{style=ap}
+
+%% ---------- colour-coded teaching boxes ----------
+\tcbset{apbox/.style={enhanced,arc=2pt,boxrule=0.7pt,left=5pt,right=5pt,top=3pt,bottom=3pt,fontupper=\small,
+  fonttitle=\small\bfseries,toptitle=1pt,bottomtitle=1pt,before skip=3pt,after skip=4pt}}
+\newtcolorbox{bdef}[1][Definition]{apbox,colback=navy!5,colframe=navy,colbacktitle=navy,coltitle=gold,title={#1}}
+\newtcolorbox{bex}[1][Example]{apbox,colback=dataC!6,colframe=dataC,colbacktitle=dataC,coltitle=white,title={#1}}
+\newtcolorbox{bmath}[1][Mathematics]{apbox,colback=skillC!5,colframe=skillC,colbacktitle=skillC,coltitle=white,title={#1}}
+\newtcolorbox{balgo}[1][Algorithm]{apbox,colback=goldlight!55,colframe=gold,colbacktitle=gold,coltitle=navy,title={#1}}
+\newtcolorbox{bcode}[1][Code]{apbox,colback=codebg,colframe=gray!60,colbacktitle=gray!60,coltitle=white,title={#1}}
+\newtcolorbox{bapp}[1][Applications \& real products]{apbox,colback=saffron!8,colframe=saffron,colbacktitle=saffron,coltitle=white,title={#1}}
+\newtcolorbox{bres}[1][Our notebook result]{apbox,colback=sun!7,colframe=sun,colbacktitle=sun,coltitle=white,title={#1}}
+\newtcolorbox{bwarn}[1][Pitfall]{apbox,colback=warnC!5,colframe=warnC,colbacktitle=warnC,coltitle=white,title={#1}}
+\algrenewcommand\algorithmicrequire{\textbf{Input:}}
+\algrenewcommand\algorithmicensure{\textbf{Output:}}
+
+\newcommand{\legendframe}{%
+\begin{frame}{How every topic is taught today}
+\centering
+\begin{tikzpicture}[every node/.style={rounded corners=3pt,minimum width=2.75cm,minimum height=1.05cm,align=center,font=\small\bfseries}]
+\node[fill=navy,text=gold] (a) at (0,0) {1. Definition};
+\node[fill=dataC,text=white] (b) at (3.05,0) {2. Example};
+\node[fill=skillC,text=white] (c) at (6.1,0) {3. Mathematics};
+\node[fill=gold,text=navy] (d) at (9.15,0) {4. Algorithm};
+\node[fill=gray!60,text=white] (e) at (0,-1.5) {5. Code};
+\node[fill=saffron,text=white] (f) at (3.05,-1.5) {6. Applications\\\& products};
+\node[fill=sun,text=white] (g) at (6.1,-1.5) {7. Our result};
+\node[fill=warnC,text=white] (h) at (9.15,-1.5) {Pitfalls};
+\foreach \x/\y in {a/b,b/c,c/d} \draw[-{Stealth},thick,gold] (\x)--(\y);
+\draw[-{Stealth},thick,gold] (d.south) -- ++(0,-0.2) -| (e.north);
+\foreach \x/\y in {e/f,f/g} \draw[-{Stealth},thick,gold] (\x)--(\y);
+\end{tikzpicture}\\[10pt]
+\small Every box colour on the following slides means the same thing --- so you always know what kind of slide you are reading.
+\end{frame}}
+
 \mode<all>

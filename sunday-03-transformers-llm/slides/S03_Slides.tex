@@ -1,7 +1,6 @@
 \documentclass[aspectratio=169,11pt]{beamer}
 \usetheme{AlgoProfessor}
 \setsunday{3}
-\usepackage{amsmath}
 %% ---- results from the executed notebook ----
 \newcommand{\rParams}{826,433}
 \newcommand{\rValEnd}{1.642}
@@ -21,146 +20,436 @@
 \begin{document}
 \begin{frame}[plain]\titlepage\end{frame}
 
+\begin{frame}{Learning objectives}
+\begin{columns}[T]
+\column{0.55\textwidth}
+By 18:00 today you can:
+\begin{enumerate}
+\item Define a language model and perplexity
+\item Explain tokenisation (BPE) and embeddings
+\item Derive and compute scaled dot-product attention
+\item Build a GPT and fine-tune it with LoRA
+\item Evaluate an LLM honestly (baselines, contamination, forgetting)
+\item Serve it with sampling, structured output and batching
+\end{enumerate}
+\column{0.4\textwidth}
+\begin{bdef}[Prerequisites]
+Sunday 2: neural networks, softmax, cross-entropy, backpropagation, PyTorch training loops.
+\end{bdef}
+\begin{bapp}[Project of the day]
+\textbf{P3 --- MiniLLM}: a GPT built from scratch, instruction-tuned with LoRA, served as a JSON API.
+\end{bapp}
+\end{columns}
+\end{frame}
+
+\legendframe
+
 \begin{frame}{Today at a glance}
 \renewcommand{\arraystretch}{1.25}
 \begin{tabularx}{\linewidth}{c c X l}
 \toprule
 \textbf{Hour} & \textbf{Mode} & \textbf{Focus} & \textbf{Dataset}\\
 \midrule
-11 & \teachtag & Attention, BPE, a mini-GPT from scratch & \ds{Tiny Shakespeare}\\
-12 & \teachtag & Fine-tuning encoders & \ds{SST-2}\\
-13 & \buildtag & LoRA instruction-tuning, from scratch & \ds{SST-2 instructions}\\
-14 & \buildtag & Evaluation, forgetting, contamination & \ds{SST-2 test}\\
-15 & \buildtag & Sampling, JSON output, throughput & \ds{Prompt suite}\\
+11 & \teachtag & Language models, tokens, attention, GPT from scratch & \ds{Tiny Shakespeare}\\
+12 & \teachtag & Encoders, transfer learning, strong baselines & \ds{SST-2}\\
+13 & \buildtag & Instruction tuning with LoRA & \ds{SST-2 instructions}\\
+14 & \buildtag & Evaluation, contamination, forgetting & \ds{SST-2 test}\\
+15 & \buildtag & Decoding, structured output, serving & \ds{Prompt suite}\\
 \bottomrule
 \end{tabularx}
-\vspace{6pt}
-\begin{block}{By 18:00 today}
-P3 --- MiniLLM on GitHub, tagged \texttt{sunday-3}.
-\end{block}
 \end{frame}
 
-\hourslide{11}{TEACH}{Self-attention, tokenisation and a mini-GPT}{Tiny Shakespeare (1.1 M characters)}{Attention maths, tokenisers, GPT internals}
+%% =====================================================================
+\hourslide{11}{TEACH}{Language models, tokens and attention}{Tiny Shakespeare (1.1 M characters)}{Attention maths, tokenisers, GPT internals}
 
-\begin{frame}{Attention in one equation}
-\[
-\mathrm{Attention}(Q,K,V)=\mathrm{softmax}\!\Big(\frac{QK^{\top}}{\sqrt{d_k}}+M\Big)V
-\]
+\begin{frame}{What is a language model?}
+\begin{bdef}[Language model]
+A model that gives the probability of the next token given all previous tokens. Generating text = repeatedly sampling the next token.
+\end{bdef}
 \begin{columns}[T]
-\column{0.48\textwidth}
-\begin{itemize}
-\item $Q$: what I am looking for
-\item $K$: what I contain
-\item $V$: what I pass on
-\item $M$: causal mask, $-\infty$ above the diagonal
-\end{itemize}
-\column{0.48\textwidth}
-\begin{block}{BPE tokenisation}
-Merge the most frequent pair, repeat. First merges on Shakespeare: \texttt{e</w>}, \texttt{s</w>}, \texttt{th}, \ldots, \texttt{the</w>}
-\end{block}
+\column{0.55\textwidth}
+\begin{bmath}[Chain rule of probability and perplexity]
+$P(x_1,\dots,x_T)=\prod_{t=1}^{T}P(x_t\mid x_{<t})$\\[3pt]
+Training loss $\mathcal{L}=-\frac1T\sum_t\log P(x_t\mid x_{<t})$\\[3pt]
+Perplexity $=e^{\mathcal{L}}$ (``how many choices the model is torn between'')
+\end{bmath}
+\column{0.41\textwidth}
+\begin{bex}[Example]
+After ``ROMEO:'' and a line break, a good model puts high probability on capital letters. Uniform guessing over 65 characters has perplexity \textbf{65}.
+\end{bex}
 \end{columns}
 \end{frame}
 
-\begin{frame}[fragile]{MiniGPT: \rParams{} parameters}
-\begin{columns}[c]
-\column{0.48\textwidth}
-\begin{lstlisting}
-x = x + Attention(LayerNorm(x))
-x = x + MLP(LayerNorm(x))
-\end{lstlisting}
-4 blocks $\cdot$ 4 heads $\cdot$ 128 dims $\cdot$ 128-character context
-\begin{exampleblock}{Our run}
-Validation loss $\rightarrow$ \textbf{\rValEnd} nats/char\\ perplexity \textbf{\rPplEnd} (random: 65)
-\end{exampleblock}
-\column{0.5\textwidth}\centering\includegraphics[width=\linewidth]{s3_gpt_loss.png}
-\end{columns}
-\end{frame}
-
-\hourslide{12}{TEACH}{Fine-tuning an encoder for sentiment}{SST-2 (6,920 train / 1,821 test)}{Transformer encoders, fine-tuning}
-
-\begin{frame}{Always beat a simple baseline first}
-\begin{columns}[T]
-\column{0.48\textwidth}
-\begin{exampleblock}{SST-2 test accuracy}
-TF-IDF + logistic regression: \textbf{\rTfidf}\\
-Transformer encoder from scratch: \rEnc
-\end{exampleblock}
-\column{0.48\textwidth}
-\begin{block}{Why?}
-Transformers win through \textbf{pretraining}. A pretrained DistilBERT fine-tuned for 2 epochs typically reaches $\approx$0.91 --- run it in class on a GPU.
-\end{block}
-\end{columns}
-\end{frame}
-
-\hourslide{13}{BUILD}{MiniLLM: LoRA instruction-tuning from scratch}{SST-2 reviews in an instruction template}{PEFT, LoRA, chat templates, memory budgeting}
-
-\begin{frame}[fragile]{LoRA: train a tiny update, freeze the rest}
-\[ h = Wx + \tfrac{\alpha}{r}\,BAx,\qquad r\ll\min(d,k),\quad B_0=0 \]
+\begin{frame}{Tokenisation and embeddings}
 \begin{columns}[T]
 \column{0.5\textwidth}
+\begin{bdef}[Token]
+The unit a model reads: a character, a word, or a sub-word piece.
+\end{bdef}
+\begin{balgo}[Byte-pair encoding (BPE)]
+\begin{algorithmic}[1]
+\State start with characters + end-of-word mark
+\For{$k=1$ to $K$ merges}
+  \State count adjacent symbol pairs
+  \State merge the most frequent pair
+\EndFor
+\State \Return merge list (the vocabulary)
+\end{algorithmic}
+\end{balgo}
+\column{0.46\textwidth}
+\begin{bres}
+First merges on Shakespeare: \texttt{e</w>}, \texttt{s</w>}, \texttt{th}, \texttt{t</w>}, \texttt{d</w>}, \ldots, \texttt{the</w>}.
+\end{bres}
+\begin{bdef}[Embedding]
+A learned vector per token: $e_i=E[i]$, $E\in\mathbb{R}^{V\times d}$. Similar tokens end up with similar vectors.
+\end{bdef}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Scaled dot-product attention}
+\begin{bdef}[Attention]
+Each token asks a question (query), every token offers a label (key) and a message (value). A token collects the messages whose keys match its query.
+\end{bdef}
+\begin{columns}[T]
+\column{0.55\textwidth}
+\begin{bmath}[Formula]
+$Q=XW_Q,\;K=XW_K,\;V=XW_V$\\[2pt]
+$\mathrm{Attention}=\mathrm{softmax}\!\Big(\frac{QK^\top}{\sqrt{d_k}}+M\Big)V$\\[2pt]
+$M_{ij}=-\infty$ for $j>i$ (causal mask)
+\end{bmath}
+\column{0.41\textwidth}
+\begin{bex}[Two tokens by hand]
+$q_2\cdot k_1=1,\;q_2\cdot k_2=3$, $d_k=4$: scores $0.5, 1.5$; softmax $\rightarrow 0.27, 0.73$. Token 2 takes 73\% of its own value and 27\% of token 1's.
+\end{bex}
+\end{columns}
+\end{frame}
+
+\begin{frame}{The Transformer block and positions}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{balgo}[GPT forward pass]
+\begin{algorithmic}[1]
+\State $h\gets$ token embedding $+$ position embedding
+\For{each of $L$ blocks}
+  \State $h\gets h+\mathrm{MultiHeadAttn}(\mathrm{LN}(h))$
+  \State $h\gets h+\mathrm{MLP}(\mathrm{LN}(h))$
+\EndFor
+\State logits $\gets\mathrm{LN}(h)\,W_{out}$
+\end{algorithmic}
+\end{balgo}
+\begin{bdef}[Multi-head]
+Several attentions in parallel, each free to focus on a different pattern (rhyme, speaker, grammar).
+\end{bdef}
+\column{0.46\textwidth}
+\begin{bmath}[Sinusoidal positions (original Transformer)]
+$PE_{(pos,2i)}=\sin\!\big(pos/10000^{2i/d}\big)$\\
+$PE_{(pos,2i+1)}=\cos\!\big(pos/10000^{2i/d}\big)$
+\end{bmath}
+\small Our MiniGPT learns its position embeddings instead.
+\begin{bdef}[Residual + LayerNorm]
+Residual paths let gradients flow through deep stacks; LayerNorm keeps activations at a stable scale.
+\end{bdef}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{MiniGPT in code and our result}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\begin{bcode}
+\begin{lstlisting}
+q, k, v = self.qkv(self.ln1(x)).split(C, dim=2)
+att = (q @ k.transpose(-2, -1)) / math.sqrt(hd)
+att = att.masked_fill(self.mask[:T, :T], -inf)
+x = x + self.proj(F.softmax(att, -1) @ v)
+x = x + self.mlp(self.ln2(x))
+\end{lstlisting}
+\end{bcode}
+\begin{bres}
+\rParams{} parameters, 1,200 AdamW steps. Validation loss $3.596\rightarrow$ \textbf{\rValEnd} nats/char, perplexity \textbf{\rPplEnd} (random: 65).
+\end{bres}
+\column{0.44\textwidth}\centering\includegraphics[width=\linewidth]{s3_gpt_loss.png}
+\begin{bapp}
+The same architecture, scaled up, powers ChatGPT, Claude, Gemini and Llama, and code completion in GitHub Copilot.
+\end{bapp}
+\end{columns}
+\end{frame}
+
+%% =====================================================================
+\hourslide{12}{TEACH}{Encoders, transfer learning and baselines}{SST-2 (6,920 train / 1,821 test reviews)}{Transformer encoders, fine-tuning, TF-IDF}
+
+\begin{frame}{Encoders, decoders and transfer learning}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{bdef}[Encoder vs decoder]
+\textbf{Encoder} (BERT-style): reads the whole text both ways --- best for classification and search. \textbf{Decoder} (GPT-style): reads left to right --- best for generation.
+\end{bdef}
+\begin{bdef}[Transfer learning]
+Pretrain on huge unlabelled text, then fine-tune on a small labelled task.
+\end{bdef}
+\column{0.46\textwidth}
+\begin{bmath}[TF-IDF baseline]
+$\mathrm{tfidf}(t,d)=\mathrm{tf}(t,d)\cdot\log\dfrac{N}{\mathrm{df}(t)}$\\[2pt]
+Words frequent in a review but rare overall get high weight.
+\end{bmath}
+\begin{bex}[Classify from \texttt{[CLS]}]
+Prepend \texttt{[CLS]}, run the encoder, feed the \texttt{[CLS]} vector to a linear layer $\rightarrow$ positive / negative.
+\end{bex}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Code, result and products}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\begin{bcode}
+\begin{lstlisting}
+tfidf = TfidfVectorizer(ngram_range=(1, 2), min_df=2)
+lr = LogisticRegression(C=4).fit(tfidf.fit_transform(X), y)
+# in class, a pretrained encoder:
+model = AutoModelForSequenceClassification\
+          .from_pretrained("distilbert-base-uncased", num_labels=2)
+\end{lstlisting}
+\end{bcode}
+\begin{bres}
+TF-IDF + logistic: \textbf{\rTfidf} $\cdot$ encoder from scratch: \rEnc
+\end{bres}
+\column{0.44\textwidth}
+\begin{bwarn}[Always beat a baseline first]
+A transformer trained from scratch on 7,000 sentences loses to TF-IDF. Transformers win through \textbf{pretraining}; a fine-tuned DistilBERT typically reaches about 0.91.
+\end{bwarn}
+\begin{bapp}
+Review and social-media sentiment monitoring; support-ticket routing; spam and intent detection; Hugging Face hosts thousands of pretrained encoders.
+\end{bapp}
+\end{columns}
+\end{frame}
+
+%% =====================================================================
+\hourslide{13}{BUILD}{Instruction tuning with LoRA}{SST-2 reviews in an instruction template}{PEFT, LoRA, chat templates, memory budgeting}
+
+\begin{frame}{Instruction tuning and LoRA}
+\begin{bdef}[Instruction tuning]
+Fine-tune a pretrained model on (instruction, response) pairs so it follows a task format instead of just continuing text.
+\end{bdef}
+\begin{columns}[T]
+\column{0.55\textwidth}
+\begin{bmath}[LoRA: low-rank adaptation]
+$h=Wx+\frac{\alpha}{r}BAx$, \; $W$ frozen,\\ $A\in\mathbb{R}^{r\times k}$, $B\in\mathbb{R}^{d\times r}$, $B_0=0$\\[3pt]
+Trainable per layer: $r(d+k)$ instead of $dk$
+\end{bmath}
+\column{0.41\textwidth}
+\begin{bex}[Worked example]
+$d=k=4096$, $r=8$: full $=16.8$\,M weights; LoRA $=8\cdot8192=65{,}536$ (\textbf{0.4\%}).
+\end{bex}
+\end{columns}
+\begin{bdef}[QLoRA]
+LoRA on top of a base model stored in 4-bit --- fits multi-billion-parameter models on one GPU.
+\end{bdef}
+\end{frame}
+
+\begin{frame}[fragile]{Training algorithm and code}
+\begin{columns}[T]
+\column{0.46\textwidth}
+\begin{balgo}[LoRA instruction tuning]
+\begin{algorithmic}[1]
+\State freeze all base weights
+\State wrap attention / MLP layers with $A,B$
+\For{each batch of templated examples}
+  \State targets of prompt tokens $\gets -100$
+  \State loss on answer tokens only
+  \State update $A,B$ only
+\EndFor
+\end{algorithmic}
+\end{balgo}
+\begin{bcode}[Chat template]
 \begin{lstlisting}
 ### Review:
 a stirring , funny and finally ...
 ### Sentiment: positive
 \end{lstlisting}
-Loss on the \textbf{answer tokens only}.
-\column{0.46\textwidth}
-\begin{exampleblock}{Our run}
-Trainable: \rLoraParams{} (\rLoraPct\%)\\
-0.5 B model: full fine-tune $\approx$ 8 GB vs LoRA $\approx$ 1 GB + adapters
-\end{exampleblock}
-\begin{alertblock}{First attempt failed}
-Whole-text loss $\Rightarrow$ 48\%, all ``negative''. Mask the prompt!
-\end{alertblock}
+\end{bcode}
+\column{0.5\textwidth}
+\begin{bcode}
+\begin{lstlisting}
+class LoRALinear(nn.Module):
+    def __init__(self, base, r=8, alpha=16):
+        super().__init__(); self.base = base
+        self.scale = alpha / r
+        self.A = nn.Parameter(torch.randn(r, base.in_features)*0.01)
+        self.B = nn.Parameter(torch.zeros(base.out_features, r))
+    def forward(self, x):
+        return self.base(x) + (x @ self.A.T @ self.B.T) * self.scale
+\end{lstlisting}
+\end{bcode}
+\begin{bres}
+Trainable: \rLoraParams{} of 891,969 (\rLoraPct\%).
+\end{bres}
 \end{columns}
 \end{frame}
 
-\hourslide{14}{BUILD}{Evaluate it properly}{SST-2 test (held out) + Shakespeare validation}{LLM evaluation, benchmark hygiene, contamination}
-
-\begin{frame}{Read the table honestly}
+\begin{frame}{Memory, pitfalls and products}
 \begin{columns}[T]
-\column{0.52\textwidth}
-\renewcommand{\arraystretch}{1.2}
+\column{0.5\textwidth}
+\begin{bmath}[GPU memory rule of thumb (AdamW)]
+Full fine-tune $\approx$ 16 bytes/parameter\\ (weights, gradients, two Adam moments)\\[2pt]
+0.5\,B model: $\approx$ 8\,GB full vs $\approx$ 1\,GB fp16 weights + small adapters with LoRA
+\end{bmath}
+\begin{bapp}
+Domain assistants (legal, medical, customer support) built by adapting open models; tools: Hugging Face PEFT, Unsloth, Axolotl.
+\end{bapp}
+\column{0.46\textwidth}
+\begin{bwarn}[Our first attempt failed]
+Loss on the whole text $\Rightarrow$ 48\% accuracy, every review ``negative''. The learning signal went into predicting review text. Masking the prompt fixed it --- this is why libraries mask prompts.
+\end{bwarn}
+\end{columns}
+\end{frame}
+
+%% =====================================================================
+\hourslide{14}{BUILD}{Evaluating language models}{SST-2 test (held out) + Shakespeare validation}{LLM evaluation, benchmark hygiene, contamination}
+
+\begin{frame}{How to score an LLM}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{bdef}[Likelihood scoring]
+For a multiple-choice task, pick the answer the model finds most probable after the prompt.
+\end{bdef}
+\begin{bmath}[Score]
+$\hat a=\arg\max_{a}\sum_{t\in a}\log P(t\mid\text{prompt},\,a_{<t})$
+\end{bmath}
+\begin{bdef}[Contamination]
+Test items (or near-copies) present in training data. Scores then measure memory, not skill.
+\end{bdef}
+\column{0.46\textwidth}
+\begin{balgo}[Evaluation harness]
+\begin{algorithmic}[1]
+\State freeze test set and prompts
+\State run every system, same settings
+\State add simple baselines
+\State check train--test overlap
+\State check forgetting on the old task
+\State repeat with several seeds
+\end{algorithmic}
+\end{balgo}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Our result, read honestly}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{bres}
 \begin{tabular}{lr}
-\toprule
 System & SST-2 acc\\
-\midrule
 Base MiniGPT, zero-shot & \rBase\\
 MiniGPT + LoRA (ours) & \rLora\\
 Encoder from scratch & \rEnc\\
 TF-IDF + logistic & \textbf{\rTfidf}\\
-\bottomrule
-\end{tabular}\\[6pt]
-\small Shakespeare val loss: \rForgetBase{} $\rightarrow$ \rForgetLora{} with adapter on
-\column{0.44\textwidth}
-\begin{block}{Hygiene checklist}
-Untouched test set $\cdot$ overlap check (0.3\%) $\cdot$ simple baseline $\cdot$ fixed prompts $\cdot$ several seeds
-\end{block}
-\begin{block}{Takeaway}
-LoRA works --- above chance with 7\% of weights --- but a small model stays small. Switch the adapter off to recover the base.
-\end{block}
+\end{tabular}\\[2pt]
+Overlap: 0.3\% of test reviews share a 30-character chunk with training text.\\
+Shakespeare loss: \rForgetBase{} $\rightarrow$ \rForgetLora{} with the adapter on.
+\end{bres}
+\column{0.46\textwidth}
+\begin{bdef}[LLM-as-judge]
+A stronger model grades answers against a rubric. Watch for position bias, length bias and self-preference: swap the order and average.
+\end{bdef}
+\begin{bapp}
+Open benchmarks and tools: EleutherAI \texttt{lm-evaluation-harness}, Stanford HELM, LMArena (crowd-sourced pairwise ratings).
+\end{bapp}
 \end{columns}
 \end{frame}
 
-\hourslide{15}{BUILD}{Serving: sampling, structured output, cost}{Team prompt suite}{Inference serving, structured outputs, latency/cost}
+%% =====================================================================
+\hourslide{15}{BUILD}{Decoding, structured output and serving}{Team prompt suite}{Inference serving, structured outputs, latency and cost}
 
-\begin{frame}[fragile]{Serve it safely}
+\begin{frame}{Decoding strategies}
 \begin{columns}[T]
 \column{0.5\textwidth}
-Temperature: $p_i\propto e^{z_i/T}$ \quad top-$k$ sampling
+\begin{bdef}[Decoding]
+How the next token is chosen from the model's probabilities: greedy, sampling, top-$k$, top-$p$.
+\end{bdef}
+\begin{bmath}[Temperature, top-$k$, top-$p$]
+$p_i\propto e^{z_i/T}$ \; (low $T$: safe; high $T$: creative)\\
+top-$k$: keep the $k$ most likely tokens\\
+top-$p$: keep the smallest set with total probability $\ge p$
+\end{bmath}
+\column{0.46\textwidth}
+\begin{bex}[Logits $(2,1,0)$]
+$T=1$: $(0.67, 0.24, 0.09)$\\ $T=0.5$: $(0.87, 0.12, 0.02)$ --- sharper.
+\end{bex}
+\begin{bres}
+$T=0.8$ sample after ``KING:'' --- ``'Tis not to tell the Lord the night way my hand''.
+\end{bres}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Structured output, throughput and products}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{bdef}[Structured output]
+Constrain the answer to a schema (JSON with fixed fields and allowed values) so software can rely on it.
+\end{bdef}
+\begin{bcode}
 \begin{lstlisting}
 {"review": "one of the best movies of the year",
  "sentiment": "positive", "confidence": 0.51}
 \end{lstlisting}
-\begin{alertblock}{Confidence $\neq$ correctness}
-Our model says ``positive'' even for ``a dull, lifeless and forgettable film''.
-\end{alertblock}
+\end{bcode}
+\begin{bwarn}[Confidence $\neq$ correctness]
+Our model also says ``positive'' for ``a dull, lifeless and forgettable film''.
+\end{bwarn}
 \column{0.46\textwidth}
-\begin{block}{Throughput}
-Batching raises tokens/second far more than latency --- the idea behind vLLM.
-\end{block}
-\begin{block}{Submit by 18:00 --- P3}
-Notebook $\cdot$ LoRA adapter $\cdot$ eval table $\cdot$ JSON demo $\rightarrow$ tag \texttt{sunday-3}
+\begin{bmath}[Throughput]
+tokens/s $=$ batch $\times$ tokens / time; a KV-cache reuses past keys and values.
+\end{bmath}
+\begin{bres}
+\begin{tabular}{rrr}
+Batch & ms/step & tokens/s\\
+1 & 1.76 & 569\\
+4 & 3.68 & 1,086\\
+16 & 7.74 & 2,066\\
+\end{tabular}
+\end{bres}
+\begin{bapp}
+vLLM, Ollama, TGI; JSON modes in LLM APIs.
+\end{bapp}
+\end{columns}
+\end{frame}
+
+%% =====================================================================
+\begin{frame}{Formula sheet --- Sunday 3}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabularx}{\linewidth}{l X}
+\toprule
+Language model & $P(x_{1:T})=\prod_tP(x_t\mid x_{<t})$; \; perplexity $=e^{\mathcal{L}}$\\
+Attention & $\mathrm{softmax}(QK^\top/\sqrt{d_k}+M)V$\\
+Block & $h\leftarrow h+\mathrm{Attn}(\mathrm{LN}(h))$; \; $h\leftarrow h+\mathrm{MLP}(\mathrm{LN}(h))$\\
+TF-IDF & $\mathrm{tf}\cdot\log(N/\mathrm{df})$\\
+LoRA & $h=Wx+\frac{\alpha}{r}BAx$; \; trainable $r(d+k)$\\
+Temperature & $p_i\propto e^{z_i/T}$\\
+Throughput & batch $\times$ tokens / time\\
+\bottomrule
+\end{tabularx}
+\end{frame}
+
+\begin{frame}{Check yourself}
+\begin{enumerate}
+\item A model has validation loss 1.642 nats per character. What is its perplexity?
+\item Why divide attention scores by $\sqrt{d_k}$?
+\item How many trainable parameters does LoRA with $r=16$ add to a $1024\times1024$ layer?
+\item Why must the prompt tokens be masked during instruction tuning?
+\item What does a 0.3\% train--test overlap tell you about our SST-2 results?
+\end{enumerate}
+\begin{bex}[Answers]
+1. $e^{1.642}\approx5.2$. \;2. Large dot products saturate the softmax and kill gradients. \;3. $16\times2048=32{,}768$. \;4. Otherwise the loss is dominated by predicting the prompt, not the answer. \;5. Contamination is negligible; the scores are not inflated by memory.
+\end{bex}
+\end{frame}
+
+\begin{frame}{Glossary and submission}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\begin{bdef}[Glossary]
+\textbf{Token} unit of text $\cdot$ \textbf{Embedding} learned vector $\cdot$ \textbf{Attention} weighted mixing of tokens $\cdot$ \textbf{Perplexity} $e^{\text{loss}}$ $\cdot$ \textbf{LoRA} low-rank adapter $\cdot$ \textbf{Instruction tuning} task-format fine-tuning $\cdot$ \textbf{Contamination} test data in training $\cdot$ \textbf{KV-cache} stored keys/values
+\end{bdef}
+\column{0.44\textwidth}
+\begin{block}{Submit by 18:00 --- P3 MiniLLM}
+Notebook $\cdot$ LoRA adapter $\cdot$ evaluation table with baselines $\cdot$ JSON demo $\rightarrow$ tag \texttt{sunday-3} $\rightarrow$ Release $\rightarrow$ submit
 \end{block}
 \end{columns}
 \end{frame}
