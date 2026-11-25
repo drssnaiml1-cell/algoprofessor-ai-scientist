@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/logo_transparent.png" width="230" alt="Algo Professor logo"/>
+
 # AlgoProfessor AI Scientist — Hands-On Programme
 
 **Sunday Edition · 6 Sundays · 30 Hours · Offline in Hyderabad · Shirdi · USA · Canada**
