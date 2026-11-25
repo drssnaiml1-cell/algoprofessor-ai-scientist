@@ -308,12 +308,6 @@ git push origin sunday-2
 
 ---
 
-### Contributors
-| | Contributor | Role |
-|---|---|---|
-| <img src="assets/logo_icon.png" width="40"/> | **AlgoProfessor** — Dr S Satyanarayana ([@drssnaiml1-cell](https://github.com/drssnaiml1-cell)) | Course design, syllabus, direction and review |
-| 🤖 | **Claude** ([@claude](https://github.com/claude)) | Co-author: notebooks, notes, slides, website |
-
 ### Course Director
 **Dr S Satyanarayana Ph.D., PDF(AI), FARSC**  
 Founder, CEO & Chief Agentic AI Scientist · AlgoProfessor AI R&D Solutions, Hyderabad  
