@@ -1,0 +1,173 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\usetheme{AlgoProfessor}
+\setsunday{2}
+\title{Sunday 2: Deep Learning with PyTorch}
+\subtitle{Hours 6--10 \;$\cdot$\; 2 h TEACH + 3 h BUILD \;$\cdot$\; Project P2 --- LeafDoctor}
+\author{Dr S Satyanarayana Ph.D., PDF(AI), FARSC \;$\cdot$\; Founder \& CEO, AlgoProfessor}
+\date{AI Scientist Hands-On \;$\cdot$\; Sunday Edition}
+\begin{document}
+\begin{frame}[plain]\titlepage\end{frame}
+
+\begin{frame}{Today at a glance}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{c c X l}
+\toprule
+\textbf{Hour} & \textbf{Mode} & \textbf{Focus} & \textbf{Dataset}\\
+\midrule
+6 & \teachtag & Tensors, autograd, training loop & \ds{Fashion-MNIST}\\
+7 & \teachtag & CNNs, augmentation, mixed precision & \ds{CIFAR-10}\\
+8 & \buildtag & LeafDoctor data pipeline \& leakage checks & \ds{PlantVillage (apple)}\\
+9 & \buildtag & CNN vs tiny ViT, Grad-CAM & \ds{PlantVillage (apple)}\\
+10 & \buildtag & Robustness, INT8, ONNX, model card & \ds{PlantVillage + shifts}\\
+\bottomrule
+\end{tabularx}
+\vspace{6pt}
+\begin{block}{By 18:00 today}
+P2 --- LeafDoctor on GitHub, tagged \texttt{sunday-2}.
+\end{block}
+\end{frame}
+
+\hourslide{6}{TEACH}{Tensors, autograd and the training loop}{Fashion-MNIST (70,000 images)}{PyTorch core, autograd, custom training loops, loss curves}
+
+\begin{frame}[fragile]{Five lines run every neural network}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{lstlisting}
+for xb, yb in batches:
+    out  = model(xb)              # forward
+    loss = F.cross_entropy(out, yb)
+    opt.zero_grad()
+    loss.backward()               # autograd
+    opt.step()                    # update
+\end{lstlisting}
+Cross-entropy: $L=-\log p_y$
+\column{0.46\textwidth}
+\begin{exampleblock}{Our run}
+Autograd check: $\frac{d}{dw}(2w-4)^2=8$ at $w=3$ \checkmark\\[3pt]
+MLP 784--256--128--10:\\ \textbf{87.1\% test accuracy} in 5 epochs
+\end{exampleblock}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Reading loss curves}
+\centering\includegraphics[width=0.78\linewidth]{s2_mlp_curves.png}\\
+\small Train loss falling while test loss rises $\Rightarrow$ memorising. Regularise, augment, or stop earlier.
+\end{frame}
+
+\hourslide{7}{TEACH}{CNNs, augmentation and mixed precision}{CIFAR-10 (10,000-image split)}{CNN design, augmentation, AMP training}
+
+\begin{frame}{Why convolutions work on images}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{itemize}
+\item \textbf{Weight sharing:} one filter everywhere
+\item \textbf{Locality:} each filter sees a small patch
+\item Conv $\rightarrow$ BatchNorm $\rightarrow$ ReLU $\rightarrow$ Pool
+\item Edges $\rightarrow$ textures $\rightarrow$ parts $\rightarrow$ objects
+\end{itemize}
+\begin{block}{Augmentation}
+Random flips + shifted crops: learn the object, not the pixels.
+\end{block}
+\column{0.46\textwidth}
+\begin{exampleblock}{Our run}
+289,194-parameter CNN, 8 epochs on 8,000 images:\\ \textbf{$\approx$67\% held-out accuracy}\\[3pt]
+bfloat16 vs fp32: same prediction on \textbf{99.0\%} of images
+\end{exampleblock}
+\begin{alertblock}{Leakage}
+Normalise with \emph{training} mean and std only.
+\end{alertblock}
+\end{columns}
+\end{frame}
+
+\hourslide{8}{BUILD}{LeafDoctor: data pipeline and leakage checks}{PlantVillage, 4 apple classes, 3,171 images}{Image datasets, stratified splits, leakage checks}
+
+\begin{frame}{Clean data before you train}
+\centering\includegraphics[width=0.62\linewidth]{s2_leaf_samples.png}
+\begin{columns}[T]
+\column{0.48\textwidth}
+\begin{enumerate}
+\item Hash every image
+\item De-duplicate \emph{before} splitting
+\item Stratified 70 / 15 / 15
+\item Verify: zero train--test overlap
+\end{enumerate}
+\column{0.48\textwidth}
+\begin{exampleblock}{Our run}
+\small 7 duplicates; 1 had leaked into test.\\ After fix: 3,164 images, 2,214 / 475 / 475, \textbf{0 overlap}.
+\end{exampleblock}
+\end{columns}
+\end{frame}
+
+\hourslide{9}{BUILD}{CNN vs tiny Vision Transformer, Grad-CAM}{PlantVillage apple subset}{Vision Transformers, Grad-CAM, error analysis}
+
+\begin{frame}{Same data, two architectures}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lrr}
+\toprule
+Model & Params & Test acc\\
+\midrule
+Small CNN & 162,748 & \textbf{0.987}\\
+Tiny ViT & 324,580 & 0.943\\
+\bottomrule
+\end{tabular}\\[8pt]
+\textbf{ViT:} $8\times8$ patches $\rightarrow$ 64 tokens + \texttt{[CLS]} $\rightarrow$ Transformer encoder
+\column{0.46\textwidth}
+\begin{block}{Inductive bias}
+CNNs assume locality --- great for small data. ViTs need more data or \textbf{pretraining}.
+\end{block}
+\small In class: \texttt{timm.create\_model( "efficientnet\_b0", pretrained=True, num\_classes=4)}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Grad-CAM: where is the model looking?}
+\centering\includegraphics[width=0.66\linewidth]{s2_gradcam.png}\\
+\small Scab and black rot: heat on lesions \checkmark \quad Healthy and rust: heat on edge and background --- \alert{shortcut warning}
+\end{frame}
+
+\hourslide{10}{BUILD}{Robustness, INT8, ONNX, model card}{PlantVillage + simulated field conditions}{ONNX, quantisation, model cards, distribution shift}
+
+\begin{frame}{Lab accuracy is not field accuracy}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{lrr}
+\toprule
+Condition & CNN & ViT\\
+\midrule
+Clean & 0.987 & 0.943\\
+Darker $\times0.6$ & 0.657 & 0.509\\
+Blur & 0.851 & 0.952\\
+Noise $\sigma{=}0.08$ & \alert{\textbf{0.200}} & \textbf{0.918}\\
+Rotate 90$^\circ$ & 0.958 & 0.916\\
+\bottomrule
+\end{tabular}
+\column{0.46\textwidth}
+\begin{alertblock}{The day's most important result}
+The ``best'' model collapses to 20\% with mild noise.
+\end{alertblock}
+\begin{block}{Fixes}
+Noise/brightness/blur augmentation $\cdot$ real field photos $\cdot$ a ``not sure'' answer
+\end{block}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Shrink, export, document}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{exampleblock}{Our run}
+INT8 ViT: 1,286 KB $\rightarrow$ 860 KB, accuracy 0.943 $\rightarrow$ 0.943\\[3pt]
+ONNX CNN: 637 KB, max logit difference $2.4\times10^{-6}$, identical predictions
+\end{exampleblock}
+\column{0.46\textwidth}
+\begin{block}{Model card}
+Task $\cdot$ data $\cdot$ performance $\cdot$ robustness range $\cdot$ known limits $\cdot$ intended use $\cdot$ deployment format
+\end{block}
+\end{columns}
+\vspace{8pt}
+\begin{block}{Submit by 18:00 --- P2 LeafDoctor}
+Notebook $\cdot$ ONNX model $\cdot$ Grad-CAM gallery $\cdot$ robustness table $\cdot$ \texttt{MODEL\_CARD.md} $\rightarrow$ tag \texttt{sunday-2} $\rightarrow$ Release $\rightarrow$ submit
+\end{block}
+\end{frame}
+\end{document}

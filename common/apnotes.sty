@@ -1,0 +1,140 @@
+%% =====================================================================
+%% apnotes.sty — AlgoProfessor AI Scientist student-notes style
+%% Times, navy & gold, one theme colour per Sunday. Usage:
+%%   \usepackage{apnotes}  \setsunday{1}
+%% Build with TEXINPUTS=../../common//: so this file and the logo are found.
+%% =====================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{apnotes}[2026/11/25 AlgoProfessor notes]
+
+\RequirePackage[T1]{fontenc}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage{mathptmx}
+\RequirePackage{amsmath,amssymb}
+\RequirePackage{microtype}
+\RequirePackage[a4paper,margin=2cm,top=2.4cm,bottom=2.2cm,headheight=26pt]{geometry}
+\RequirePackage[table]{xcolor}
+\RequirePackage{graphicx}
+\RequirePackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,calc,shapes}
+\RequirePackage[most]{tcolorbox}
+\RequirePackage{tabularx,booktabs,array}
+\RequirePackage{enumitem}
+\RequirePackage{titlesec}
+\RequirePackage{fancyhdr}
+\RequirePackage{lastpage}
+\RequirePackage{listings}
+\RequirePackage{caption}
+\RequirePackage[hidelinks]{hyperref}
+
+\renewcommand{\sfdefault}{\rmdefault}
+\renewcommand{\ttdefault}{\rmdefault}
+\graphicspath{{../figures/}{../../assets/}{../../common/}}
+
+%% ---------- colour code ----------
+\definecolor{navy}{HTML}{0B1F3A}
+\definecolor{navylight}{HTML}{1F3B63}
+\definecolor{gold}{HTML}{C9A227}
+\definecolor{goldlight}{HTML}{F6EBC4}
+\definecolor{ink}{HTML}{16202E}
+\definecolor{saffron}{HTML}{FF9933}
+\definecolor{indgreen}{HTML}{138808}
+\definecolor{dataC}{HTML}{1E7B5A}
+\definecolor{skillC}{HTML}{6A3D9A}
+\definecolor{warnC}{HTML}{A4243B}
+\definecolor{codebg}{HTML}{F4F1E6}
+\definecolor{sunA}{HTML}{0F6E7A}
+\definecolor{sunB}{HTML}{A4243B}
+\definecolor{sunC}{HTML}{5B3A8E}
+\definecolor{sunD}{HTML}{2E7D32}
+\definecolor{sunE}{HTML}{C25E00}
+\definecolor{sunF}{HTML}{1F4E9C}
+\colorlet{sun}{sunA}
+
+\newcommand{\sundaynum}{1}
+\newcommand{\sundaytitle}{}
+\newcommand{\sundayhours}{}
+\newcommand{\setsunday}[1]{%
+  \renewcommand{\sundaynum}{#1}%
+  \ifcase#1\or\colorlet{sun}{sunA}\or\colorlet{sun}{sunB}\or\colorlet{sun}{sunC}\or\colorlet{sun}{sunD}\or\colorlet{sun}{sunE}\or\colorlet{sun}{sunF}\fi}
+
+\color{ink}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlist[itemize]{leftmargin=1.3em,itemsep=2pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=1.5em,itemsep=2pt,topsep=3pt}
+\captionsetup{font=small,labelfont={bf,color=navy},textfont={color=navylight}}
+
+%% ---------- headings ----------
+\titleformat{\section}{\Large\bfseries\color{sun}}{}{0pt}{}[{\color{gold}\titlerule[1.1pt]}]
+\titleformat{\subsection}{\large\bfseries\color{navy}}{\thesubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+\setcounter{secnumdepth}{2}
+
+%% ---------- header / footer ----------
+\pagestyle{fancy}\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyhead[L]{\raisebox{-0.32\height}{\includegraphics[height=0.66cm]{logo_transparent.png}}\hspace{6pt}\footnotesize\color{navy}AI Scientist Hands-On --- Student Notes}
+\fancyhead[R]{\footnotesize\bfseries\color{sun}Sunday \sundaynum\ $\cdot$ \sundaytitle}
+\fancyfoot[L]{\scriptsize\color{navylight}www.algoprofessor.com}
+\fancyfoot[C]{\tikz{\fill[saffron](0,0) rectangle (1,0.05);\fill[white,draw=gray!30](1,0) rectangle (2,0.05);\fill[indgreen](2,0) rectangle (3,0.05);}}
+\fancyfoot[R]{\scriptsize\color{navylight}Page \thepage\ of \pageref{LastPage}}
+
+%% ---------- tags ----------
+\newcommand{\teachtag}{\tikz[baseline=(t.base)]\node[fill=gold,text=navy,rounded corners=2pt,inner sep=2.2pt,font=\scriptsize\bfseries](t){TEACH};}
+\newcommand{\buildtag}{\tikz[baseline=(t.base)]\node[fill=navy,text=gold,rounded corners=2pt,inner sep=2.2pt,font=\scriptsize\bfseries](t){BUILD};}
+\newcommand{\ds}[1]{{\color{dataC}\bfseries #1}}
+\newcommand{\sk}[1]{{\color{skillC}#1}}
+
+%% ---------- title banner ----------
+\newcommand{\notestitle}[3]{% {title}{hours}{goal}
+  \renewcommand{\sundaytitle}{#1}\renewcommand{\sundayhours}{#2}%
+  \thispagestyle{fancy}%
+  \begin{tcolorbox}[enhanced,colback=sun,colframe=sun,arc=4pt,boxrule=0pt,left=12pt,right=12pt,top=10pt,bottom=10pt,
+     borderline south={3pt}{0pt}{gold}]
+  \begin{minipage}[c]{0.70\linewidth}\color{white}
+    {\footnotesize\color{goldlight}ALGOPROFESSOR $\cdot$ AI SCIENTIST HANDS-ON $\cdot$ STUDENT NOTES}\\[4pt]
+    {\raggedright\fontsize{20}{24}\selectfont\bfseries Sunday \sundaynum: #1\par}\vspace{4pt}
+    {\small Hours #2 $\cdot$ 2 h hands-on teaching + 3 h real-time project work $\cdot$ GitHub submission by 18:00}
+  \end{minipage}\hfill
+  \begin{minipage}[c]{0.25\linewidth}\raggedleft
+    \tikz\node[fill=white,rounded corners=4pt,inner sep=4pt]{\includegraphics[width=3.4cm]{logo_transparent.png}};
+  \end{minipage}
+  \end{tcolorbox}
+  \vspace{2pt}
+  \begin{tcolorbox}[colback=goldlight,colframe=gold,boxrule=0.6pt,arc=2pt,left=8pt,right=8pt,top=4pt,bottom=4pt,fontupper=\small]
+  \textbf{Today's goal.} #3
+  \end{tcolorbox}}
+
+%% ---------- hour heading ----------
+\newcommand{\hourhead}[5]{% {hour}{TEACH/BUILD}{title}{dataset}{skills}
+  \section{Hour #1 --- #3}
+  \begin{tabularx}{\linewidth}{@{}l X@{}}
+  \ifnum\pdfstrcmp{#2}{TEACH}=0 \teachtag\else\buildtag\fi & \textbf{Dataset:} \ds{#4}\quad$\cdot$\quad \textbf{Skills:} \sk{#5}\\
+  \end{tabularx}\par}
+
+%% ---------- boxes ----------
+\newtcolorbox{keyidea}[1][Key idea]{enhanced,breakable,colback=sun!6,colframe=sun,boxrule=0.8pt,arc=2pt,left=7pt,right=7pt,top=5pt,bottom=5pt,
+  title={\bfseries #1},fonttitle=\small,coltitle=white,colbacktitle=sun}
+\newtcolorbox{defbox}[1][Definition]{enhanced,breakable,colback=white,colframe=navy,boxrule=0.6pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries #1},fonttitle=\small,coltitle=gold,colbacktitle=navy}
+\newtcolorbox{resultbox}[1][From our notebook run]{enhanced,breakable,colback=dataC!6,colframe=dataC,boxrule=0.6pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries #1},fonttitle=\small,coltitle=white,colbacktitle=dataC}
+\newtcolorbox{pitfall}[1][Common pitfall]{enhanced,breakable,colback=warnC!5,colframe=warnC,boxrule=0.6pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries #1},fonttitle=\small,coltitle=white,colbacktitle=warnC}
+\newtcolorbox{exercise}[1][Try it yourself]{enhanced,breakable,colback=goldlight!60,colframe=gold,boxrule=0.6pt,arc=2pt,left=7pt,right=7pt,top=4pt,bottom=4pt,
+  title={\bfseries #1},fonttitle=\small,coltitle=navy,colbacktitle=gold}
+\newtcolorbox{submitbox}{enhanced,colback=saffron!10,colframe=saffron,boxrule=0.8pt,arc=2pt,left=8pt,right=8pt,top=5pt,bottom=5pt,
+  title={\bfseries GitHub submission --- by 18:00 local time},fonttitle=\small,coltitle=white,colbacktitle=saffron}
+
+%% ---------- code ----------
+\lstdefinestyle{ap}{basicstyle=\small\rmfamily,backgroundcolor=\color{codebg},frame=leftline,framerule=2.5pt,rulecolor=\color{sun},
+  keywordstyle=\color{navy}\bfseries,commentstyle=\color{dataC}\itshape,stringstyle=\color{warnC},
+  numbers=none,breaklines=true,showstringspaces=false,columns=fullflexible,xleftmargin=8pt,framexleftmargin=6pt,
+  aboveskip=6pt,belowskip=6pt,language=Python,upquote=true}
+\lstset{style=ap}
+
+\newcommand{\figw}[3][0.9]{\begin{center}\includegraphics[width=#1\linewidth]{#2}\captionof{figure}{#3}\end{center}}
+
+\renewcommand{\arraystretch}{1.3}
+\endinput

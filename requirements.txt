@@ -1,0 +1,23 @@
+# AlgoProfessor AI Scientist Hands-On — Python packages for all six Sunday notebooks
+numpy
+pandas
+scipy
+matplotlib
+seaborn
+scikit-learn
+xgboost
+optuna
+shap
+mlflow-skinny
+torch
+onnx
+onnxruntime
+faiss-cpu
+rank_bm25
+pypdf
+fastapi
+uvicorn
+httpx
+pytest
+fairlearn
+jupyterlab

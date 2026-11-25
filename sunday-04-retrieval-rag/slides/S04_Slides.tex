@@ -1,0 +1,135 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\usetheme{AlgoProfessor}
+\setsunday{4}
+\title{Sunday 4: Embeddings, Retrieval \& RAG}
+\subtitle{Hours 16--20 \;$\cdot$\; 2 h TEACH + 3 h BUILD \;$\cdot$\; Project P4 --- PolicyGPT}
+\author{Dr S Satyanarayana Ph.D., PDF(AI), FARSC \;$\cdot$\; Founder \& CEO, AlgoProfessor}
+\date{AI Scientist Hands-On \;$\cdot$\; Sunday Edition}
+\begin{document}
+\begin{frame}[plain]\titlepage\end{frame}
+
+\begin{frame}{Today at a glance}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{c c X l}
+\toprule
+\textbf{Hour} & \textbf{Mode} & \textbf{Focus} & \textbf{Dataset}\\
+\midrule
+16 & \teachtag & Embeddings, FAISS (Flat, IVF, HNSW) & \ds{SST-2 sentences}\\
+17 & \teachtag & Hybrid BM25 + dense, re-ranking, metrics & \ds{TruthfulQA}\\
+18 & \buildtag & PDF ingestion, chunking with page metadata & \ds{Syllabus PDF}\\
+19 & \buildtag & Cited Q\&A API with abstention & \ds{Syllabus PDF}\\
+20 & \buildtag & Dev set to tune, golden set to test & \ds{8 + 25 questions}\\
+\bottomrule
+\end{tabularx}
+\vspace{6pt}
+\begin{block}{By 18:00 today}
+P4 --- PolicyGPT on GitHub, tagged \texttt{sunday-4}.
+\end{block}
+\end{frame}
+
+\hourslide{16}{TEACH}{Embeddings and vector search with FAISS}{SST-2 sentences (8,741)}{Embeddings, vector databases, ANN indexing}
+
+\begin{frame}[fragile]{Exact vs approximate search}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{lstlisting}
+flat = faiss.IndexFlatIP(d)
+ivf  = faiss.IndexIVFFlat(q, d, 64, IP)
+ivf.nprobe = 6
+hnsw = faiss.IndexHNSWFlat(d, 32, IP)
+\end{lstlisting}
+Unit vectors: cosine $=u^\top v$
+\column{0.46\textwidth}
+\begin{exampleblock}{500 queries, top-10}
+\begin{tabular}{lrr}
+Index & Recall & $\mu$s/q\\
+Flat & 1.000 & 465.6\\
+IVF & 0.842 & 47.0\\
+HNSW & 0.980 & 43.6\\
+\end{tabular}
+\end{exampleblock}
+\small ``a heartwarming film for the whole family'' $\rightarrow$ ``a film that will enthrall the whole family''
+\end{columns}
+\end{frame}
+
+\hourslide{17}{TEACH}{Hybrid retrieval, re-ranking, metrics}{TruthfulQA (790 questions + look-alike false answers)}{BM25 + dense hybrid, re-rankers, Recall@k, MRR, nDCG}
+
+\begin{frame}{Retrieval finds matches, not truth}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{lrrr}
+\toprule
+ & R@1 & MRR & Misc@1\\
+\midrule
+BM25 & 0.377 & 0.567 & \alert{0.471}\\
+Dense & 0.384 & 0.547 & 0.381\\
+Hybrid & \textbf{0.462} & \textbf{0.609} & \textbf{0.362}\\
+\bottomrule
+\end{tabular}\\[6pt]
+\small $\mathrm{RRF}(d)=\sum_r \frac{1}{60+\mathrm{rank}_r(d)}$\\
+\small Re-ranker (held-out half): 0.468 $\rightarrow$ 0.423 \alert{worse}
+\column{0.48\textwidth}\centering\includegraphics[width=\linewidth]{s4_retrieval.png}
+\end{columns}
+\end{frame}
+
+\hourslide{18}{BUILD}{PolicyGPT: ingest and chunk a real PDF}{Course syllabus PDF (NEP 2020 / UGC PDFs in class)}{PDF parsing, chunking strategy, metadata}
+
+\begin{frame}{Chunk with citations in mind}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{exampleblock}{Our run}
+20 pages, 4,761 words $\rightarrow$ \textbf{79 chunks} of $\approx$90 words, each tagged with its page
+\end{exampleblock}
+\column{0.46\textwidth}
+\begin{block}{Trade-off}
+Small chunks: precise citations, less context.\\ Large chunks: more context, diluted relevance.\\ Overlap: facts are not cut in half.
+\end{block}
+\end{columns}
+\end{frame}
+
+\hourslide{19}{BUILD}{Cited Q\&A API with abstention}{Course syllabus PDF}{Hybrid search, citations, abstention, FastAPI}
+
+\begin{frame}{Knowing when to say ``I don't know''}
+\[\mathrm{coverage}(q)=\frac{\sum_{w\in q\cap\text{chunks}}\mathrm{idf}(w)}{\sum_{w\in q}\mathrm{idf}(w)}\quad\text{abstain if below threshold}\]
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{exampleblock}{Answered, with citation}
+``What is the programme fee in India?''\\ $\rightarrow$ ``\ldots INR 50,000 (Hyderabad \& Shirdi)'' [p.\,1]
+\end{exampleblock}
+\column{0.46\textwidth}
+\begin{alertblock}{Abstained}
+``What is the hostel fee?'' --- ``fee'' matches, ``hostel'' never appears. Coverage 0.40.
+\end{alertblock}
+\end{columns}
+\end{frame}
+
+\hourslide{20}{BUILD}{Evaluate: dev set to tune, golden set to test}{8 dev + 25 golden questions}{RAG evaluation, hallucination measurement, regression tests}
+
+\begin{frame}{Golden-set results (threshold 0.50 from the dev set)}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{lr}
+\toprule
+Retrieval hit@3 & \textbf{0.95}\\
+Answer has gold fact & 0.60\\
+Wrongly abstained & \textbf{0.00}\\
+Correctly abstained & \textbf{1.00}\\
+Faithfulness & 1.00\\
+\bottomrule
+\end{tabular}
+\column{0.46\textwidth}
+\begin{alertblock}{Version 1}
+Hand-picked threshold: 55\% wrongly abstained. Never tune on the set you report.
+\end{alertblock}
+\begin{block}{Next step}
+Right page, wrong words $\Rightarrow$ add an LLM generator with the same citations \& abstention.
+\end{block}
+\end{columns}
+\vspace{4pt}
+\begin{block}{Submit by 18:00 --- P4 PolicyGPT}
+Notebook $\cdot$ \texttt{src/policygpt\_api.py} $\cdot$ golden set in \texttt{tests/} $\cdot$ eval table $\rightarrow$ tag \texttt{sunday-4}
+\end{block}
+\end{frame}
+\end{document}

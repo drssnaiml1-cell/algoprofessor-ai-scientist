@@ -1,0 +1,216 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\usetheme{AlgoProfessor}
+\setsunday{1}
+\title{Sunday 1: Data \& Machine Learning Foundations}
+\subtitle{Hours 1--5 \;$\cdot$\; 2 h TEACH + 3 h BUILD \;$\cdot$\; Project P1 --- Churn Intelligence}
+\author{Dr S Satyanarayana Ph.D., PDF(AI), FARSC \;$\cdot$\; Founder \& CEO, AlgoProfessor}
+\date{AI Scientist Hands-On \;$\cdot$\; Sunday Edition}
+\begin{document}
+\begin{frame}[plain]\titlepage\end{frame}
+
+\begin{frame}{Today at a glance}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{c c X l}
+\toprule
+\textbf{Hour} & \textbf{Mode} & \textbf{Focus} & \textbf{Dataset}\\
+\midrule
+1 & \teachtag & Scientific Python \& EDA & \ds{UCI Adult Income}\\
+2 & \teachtag & Pipelines, cross-validation, gradient boosting & \ds{California Housing}\\
+3 & \buildtag & Churn: problem framing \& baseline & \ds{IBM Telco Churn}\\
+4 & \buildtag & Imbalance, Optuna, SHAP & \ds{IBM Telco Churn}\\
+5 & \buildtag & MLflow, repo, stakeholder summary & \ds{Telco + MLflow}\\
+\bottomrule
+\end{tabularx}
+\vspace{6pt}
+\begin{block}{By 18:00 today}
+P1 --- Churn Intelligence on GitHub, tagged \texttt{sunday-1}.
+\end{block}
+\end{frame}
+
+\hourslide{1}{TEACH}{Scientific Python \& Exploratory Data Analysis}{UCI Adult Income (48,842 rows)}{NumPy, Pandas, Matplotlib, data cleaning, EDA reasoning}
+
+\begin{frame}[fragile]{Vectorise, then check data quality}
+\begin{columns}[T]
+\column{0.48\textwidth}
+\begin{lstlisting}
+x = np.random.rand(1_000_000)
+sum(v * v for v in x)   # loop
+np.dot(x, x)            # vectorised
+\end{lstlisting}
+\begin{exampleblock}{Our run}
+135.2 ms $\rightarrow$ 0.9 ms: \textbf{154$\times$ faster}
+\end{exampleblock}
+\column{0.48\textwidth}
+\textbf{Five questions for every dataset}
+\begin{enumerate}
+\item Shape and types
+\item Missing values --- and why
+\item Duplicates
+\item Target balance
+\item Leakage
+\end{enumerate}
+\end{columns}
+\end{frame}
+
+\begin{frame}{What the Adult data tells us}
+\centering\includegraphics[width=0.92\linewidth]{s1_adult_eda.png}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{exampleblock}{Data quality}
+\small Missing: occupation 5.75\%, workclass 5.73\%. 52 duplicates removed. 23.9\% earn $>$\$50K.
+\end{exampleblock}
+\column{0.46\textwidth}
+\begin{alertblock}{A fairness question}
+\small $>$\$50K: men 30.4\%, women 10.9\% --- revisited on Sunday 6.
+\end{alertblock}
+\end{columns}
+\end{frame}
+
+\hourslide{2}{TEACH}{Pipelines, cross-validation, gradient boosting}{California Housing (20,640 districts)}{scikit-learn Pipelines, k-fold CV, XGBoost, feature engineering}
+
+\begin{frame}[fragile]{Pipelines stop leakage; CV picks the model}
+\begin{columns}[T]
+\column{0.55\textwidth}
+\begin{lstlisting}
+prep = ColumnTransformer([
+ ("num", Pipeline([("impute", SimpleImputer()),
+                   ("scale", StandardScaler())]), num),
+ ("cat", OneHotEncoder(), ["ocean_proximity"])])
+pipe = Pipeline([("prep", prep),
+                 ("model", XGBRegressor())])
+cross_val_score(pipe, X_tr, y_tr, cv=5)
+\end{lstlisting}
+\column{0.42\textwidth}
+\begin{exampleblock}{5-fold CV RMSE}
+\begin{tabular}{lr}
+XGBoost & \$45,339\\
+Random forest & \$50,258\\
+Linear & \$67,859\\
+\end{tabular}\\[3pt]
+Test: \textbf{RMSE \$44,355, $R^2$ 0.850}
+\end{exampleblock}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Predicted vs actual --- and a data artefact}
+\begin{columns}[c]
+\column{0.45\textwidth}\centering\includegraphics[width=\linewidth]{s1_housing_pred.png}
+\column{0.5\textwidth}
+\begin{itemize}
+\item Test set used \textbf{once}, at the end
+\item Ratios (rooms per household) beat raw totals
+\end{itemize}
+\begin{alertblock}{Capped target}
+Values stop at \$500,001 --- a collection artefact, not a model failure. Say how you handled it.
+\end{alertblock}
+\end{columns}
+\end{frame}
+
+\hourslide{3}{BUILD}{Churn project: problem framing \& baseline}{IBM Telco Customer Churn (7,043 customers)}{Problem framing, baseline thinking, F1 / ROC-AUC}
+
+\begin{frame}{Frame it before you model it}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{block}{The question}
+Which customers will cancel next month, so retention can call them first?
+\end{block}
+\textbf{Metrics:} ROC-AUC (ranking) and F1 for churners.\\[4pt]
+$F_1=\dfrac{2PR}{P+R}$
+\column{0.46\textwidth}
+\begin{exampleblock}{Our run}
+Churn rate 26.5\%\\
+Month-to-month 42.7\% $\cdot$ two-year 2.8\%\\[3pt]
+Dummy: AUC 0.500, F1 0.000\\
+Logistic: AUC 0.846, F1 0.607
+\end{exampleblock}
+\begin{alertblock}{Accuracy hides failure}
+Never predicting churn is 73\% ``accurate''.
+\end{alertblock}
+\end{columns}
+\end{frame}
+
+\hourslide{4}{BUILD}{Imbalance, Optuna tuning, SHAP}{IBM Telco Customer Churn}{Optuna, class weighting, SHAP explainability}
+
+\begin{frame}{The leaderboard, read honestly}
+\begin{columns}[T]
+\column{0.55\textwidth}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{lrr}
+\toprule
+Model & AUC & F1\\
+\midrule
+XGBoost + weight + Optuna & \textbf{0.847} & \textbf{0.632}\\
+Logistic + class weight & 0.846 & 0.627\\
+Logistic & 0.846 & 0.607\\
+Dummy & 0.500 & 0.000\\
+\bottomrule
+\end{tabular}
+\column{0.42\textwidth}
+\begin{block}{Lesson}
+25 Optuna trials bought \textbf{+0.001 AUC}. Class weighting helped F1 more. When a simple model is this close, ship the simple model.
+\end{block}
+\end{columns}
+\end{frame}
+
+\begin{frame}{SHAP: why customers leave}
+\begin{columns}[c]
+\column{0.55\textwidth}\centering\includegraphics[width=\linewidth]{s1_shap.png}
+\column{0.42\textwidth}
+\begin{itemize}
+\item Month-to-month contract
+\item Short tenure
+\item Fibre-optic internet
+\item No online security
+\end{itemize}
+\begin{block}{Action}
+Loyalty offer before month 12.
+\end{block}
+\begin{alertblock}{Caution}
+SHAP $\neq$ causation. Test actions with an experiment.
+\end{alertblock}
+\end{columns}
+\end{frame}
+
+\hourslide{5}{BUILD}{Track, publish, present}{Telco + MLflow runs}{MLflow, Git/GitHub workflow, technical storytelling}
+
+\begin{frame}[fragile]{Track every run; tell one clear story}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\begin{lstlisting}
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
+mlflow.set_experiment("P1-churn-intelligence")
+with mlflow.start_run(run_name="xgb"):
+    mlflow.log_metrics({"roc_auc": 0.847,
+                        "f1_churn": 0.632})
+\end{lstlisting}
+\texttt{mlflow ui --backend-store-uri sqlite:///mlflow.db}
+\column{0.45\textwidth}
+\begin{block}{One-page summary}
+Question $\cdot$ data $\cdot$ best model \& held-out score $\cdot$ top 3 drivers $\cdot$ one recommendation $\cdot$ limits
+\end{block}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Submit by 18:00}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{block}{P1 --- Churn Intelligence}
+Notebook $\cdot$ MLflow logs $\cdot$ SHAP plot $\cdot$ one-page summary
+\end{block}
+\begin{enumerate}
+\item \texttt{git push origin main}
+\item \texttt{git tag -a sunday-1 -m "Sunday 1"}
+\item \texttt{git push origin sunday-1}
+\item GitHub Release $\rightarrow$ submit the link
+\end{enumerate}
+\column{0.45\textwidth}
+\begin{exampleblock}{Checklist}
+$\square$ Cleaning decisions in README\\
+$\square$ Dummy baseline reported\\
+$\square$ Test set used once\\
+$\square$ One business action from SHAP\\
+$\square$ Tag pushed before 18:00
+\end{exampleblock}
+\end{columns}
+\end{frame}
+\end{document}

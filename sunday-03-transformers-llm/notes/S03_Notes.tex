@@ -1,0 +1,171 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{apnotes}
+\setsunday{3}
+%% ---- results from the executed notebook (updated after each run) ----
+\newcommand{\rParams}{826,433}
+\newcommand{\rValStart}{3.596}
+\newcommand{\rValEnd}{1.642}
+\newcommand{\rPplEnd}{5.16}
+\newcommand{\rTfidf}{0.810}
+\newcommand{\rEnc}{0.749}
+\newcommand{\rBase}{0.520}
+\newcommand{\rLora}{0.605}
+\newcommand{\rLoraParams}{65,536}
+\newcommand{\rLoraPct}{7.3}
+\newcommand{\rForgetBase}{1.642}
+\newcommand{\rForgetLora}{2.721}
+\newcommand{\rContam}{0.3}
+\begin{document}
+
+\notestitle{Transformers \& LLM Engineering}{11--15}{Understand a GPT from the inside, build one from scratch, teach it a new instruction with LoRA, evaluate it honestly and serve it with structured output --- project \textbf{P3 --- MiniLLM}.}
+
+\begin{tabularx}{\linewidth}{@{}c c X l@{}}
+\toprule
+\textbf{Hour} & \textbf{Mode} & \textbf{Focus} & \textbf{Dataset}\\
+\midrule
+11 & \teachtag & Self-attention, BPE tokenisation, a mini-GPT from scratch & \ds{Tiny Shakespeare}\\
+12 & \teachtag & Fine-tuning encoders for classification & \ds{SST-2}\\
+13 & \buildtag & MiniLLM: LoRA instruction-tuning, written from scratch & \ds{SST-2 instructions}\\
+14 & \buildtag & Evaluation: accuracy, forgetting, contamination & \ds{SST-2 test}\\
+15 & \buildtag & Serving: sampling, JSON output, latency and throughput & \ds{Prompt suite}\\
+\bottomrule
+\end{tabularx}
+
+\medskip
+Companion notebook: \texttt{notebooks/S03\_Transformers\_LLM\_Engineering.ipynb}. We build every model ourselves so it runs on a CPU; the same ideas scale to open models with Hugging Face \texttt{transformers} and \texttt{peft} on a GPU (reference code is in the notebook).
+
+%% ------------------------------------------------------------------
+\hourhead{11}{TEACH}{Self-attention, tokenisation and a mini-GPT}{Tiny Shakespeare (1.1\,M characters, public domain)}{Attention maths, tokenisers, GPT internals}
+
+\subsection{Scaled dot-product attention}
+\[
+\mathrm{Attention}(Q,K,V)=\mathrm{softmax}\!\Big(\frac{QK^{\top}}{\sqrt{d_k}}+M\Big)V,\qquad
+M_{ij}=\begin{cases}0 & j\le i\\ -\infty & j>i\end{cases}
+\]
+Each token builds a query $Q$, key $K$ and value $V$. The score $QK^\top$ says how relevant every earlier token is; the causal mask $M$ stops a token from seeing the future; dividing by $\sqrt{d_k}$ keeps the softmax from saturating.
+
+\begin{resultbox}
+In the notebook's 5-token example every row of attention weights sums to 1 and every entry above the diagonal is exactly 0.
+\end{resultbox}
+
+\subsection{Byte-pair encoding (BPE)}
+Start from characters; repeatedly merge the most frequent adjacent pair into a new symbol. Frequent words become one token, rare words split into pieces --- so there are no unknown words.
+\begin{resultbox}
+The first merges learned on Shakespeare are \texttt{e</w>}, \texttt{s</w>}, \texttt{th}, \texttt{t</w>}, \texttt{d</w>}, \ldots, \texttt{the</w>}.
+\end{resultbox}
+
+\subsection{The GPT block}
+\begin{lstlisting}
+x = x + Attention(LayerNorm(x))     # tokens exchange information
+x = x + MLP(LayerNorm(x))           # each token is processed on its own
+\end{lstlisting}
+Our MiniGPT: 4 blocks, 4 heads, 128-dimensional embeddings, context of 128 characters --- \textbf{\rParams{} parameters}.
+
+\begin{resultbox}
+Validation loss falls from \rValStart{} to \rValEnd{} nats per character in 1,200 AdamW steps (perplexity \rPplEnd{}, versus 65 for random guessing over the 65-character vocabulary). Samples look like Shakespeare in form: speaker names, line breaks and plausible words.
+\end{resultbox}
+\figw[0.6]{s3_gpt_loss.png}{MiniGPT pre-training: train and validation loss stay close, so the model is not overfitting yet.}
+
+%% ------------------------------------------------------------------
+\hourhead{12}{TEACH}{Fine-tuning an encoder for sentiment}{SST-2 (6,920 train / 1,821 test reviews)}{Transformer encoders, tokenisation pipelines, fine-tuning}
+
+Encoders (BERT-style) read the whole sentence at once and are ideal for classification: put a \texttt{[CLS]} token in front, run the encoder, classify from \texttt{[CLS]}.
+
+\begin{resultbox}[SST-2 test accuracy]
+TF-IDF + logistic regression: \textbf{\rTfidf} \qquad Transformer encoder trained from scratch: \rEnc
+\end{resultbox}
+
+\begin{keyidea}[Always beat a simple baseline first]
+A transformer trained from scratch on 7,000 sentences loses to TF-IDF. Transformers win through \textbf{pretraining} on billions of words; a pretrained DistilBERT fine-tuned for two epochs typically reaches about 0.91 on SST-2 (run it in class on a GPU).
+\end{keyidea}
+
+%% ------------------------------------------------------------------
+\hourhead{13}{BUILD}{MiniLLM: LoRA instruction-tuning from scratch}{SST-2 reviews in an instruction template}{PEFT, LoRA, chat templates, GPU-memory budgeting}
+
+\subsection{LoRA}
+Freeze the pretrained weight $W\in\mathbb{R}^{d\times k}$ and learn a low-rank update:
+\[
+h = Wx + \frac{\alpha}{r}\,BAx,\qquad A\in\mathbb{R}^{r\times k},\; B\in\mathbb{R}^{d\times r},\; r\ll\min(d,k).
+\]
+$B$ starts at zero, so training starts exactly from the base model.
+\begin{lstlisting}
+class LoRALinear(nn.Module):
+    def __init__(self, base, r=8, alpha=16):
+        super().__init__(); self.base, self.scale = base, alpha / r
+        self.A = nn.Parameter(torch.randn(r, base.in_features) * 0.01)
+        self.B = nn.Parameter(torch.zeros(base.out_features, r))
+    def forward(self, x): return self.base(x) + (x @ self.A.T @ self.B.T) * self.scale
+\end{lstlisting}
+
+\subsection{Chat template and answer-only loss}
+\begin{lstlisting}
+### Review:
+a stirring , funny and finally transporting re imagining of beauty ...
+### Sentiment: positive
+\end{lstlisting}
+Compute the loss \emph{only on the answer tokens} (set prompt targets to $-100$).
+
+\begin{pitfall}[Our first attempt failed --- and why]
+We first trained LoRA on whole text windows, so almost all the learning signal went into predicting review text. Result: 48\% accuracy, worse than chance, with every review labelled ``negative''. Switching to answer-only loss fixed it. This is exactly why instruction-tuning libraries mask the prompt.
+\end{pitfall}
+
+\begin{resultbox}
+Trainable LoRA parameters: \rLoraParams{} of 891,969 (\rLoraPct\%).\\
+GPU-memory rule of thumb for a 0.5\,B model with AdamW: full fine-tune $\approx$ 16 bytes/parameter $\approx$ 8\,GB; LoRA keeps fp16 weights ($\approx$ 1\,GB) plus small adapters.
+\end{resultbox}
+
+%% ------------------------------------------------------------------
+\hourhead{14}{BUILD}{Evaluate it properly}{SST-2 test (400 held-out reviews) + Shakespeare validation}{LLM evaluation, benchmark hygiene, contamination checks}
+
+\textbf{Scoring an LM as a classifier:} compare $\log p(\text{``positive''}\mid\text{prompt})$ with $\log p(\text{``negative''}\mid\text{prompt})$.
+
+\begin{resultbox}[SST-2 test accuracy (400 held-out reviews for the LMs)]
+\begin{tabular}{lr}
+\toprule
+System & Accuracy\\
+\midrule
+Base MiniGPT, zero-shot & \rBase\\
+MiniGPT + LoRA (ours) & \rLora\\
+Transformer encoder from scratch & \rEnc\\
+TF-IDF + logistic regression & \textbf{\rTfidf}\\
+\bottomrule
+\end{tabular}\\[3pt]
+Forgetting check --- Shakespeare validation loss: base \rForgetBase{} $\rightarrow$ with LoRA active \rForgetLora.\\
+Contamination: \rContam\% of test reviews share a 30-character chunk with the training text.
+\end{resultbox}
+
+\begin{keyidea}[Read the table honestly]
+LoRA moved a character-level model trained on plays to above-chance sentiment classification by training 7\% of its weights --- a real effect, but a small model is still a small model. With the adapter active the model is worse at Shakespeare; switch the adapter off and the original model is back, because the base weights never changed.
+\end{keyidea}
+
+\textbf{Benchmark hygiene:} report on a test set you never tuned on; check train--test overlap; compare with a simple baseline; keep prompts fixed across systems; report variance across seeds. \textbf{LLM-as-judge:} watch for position bias, length bias and self-preference --- swap answer order and average.
+
+%% ------------------------------------------------------------------
+\hourhead{15}{BUILD}{Serving: sampling, structured output, latency and cost}{Team prompt suite}{Inference serving, structured outputs, latency/cost engineering}
+
+\textbf{Temperature} $T$ rescales logits before softmax, $p_i\propto e^{z_i/T}$: low $T$ is safe and repetitive, high $T$ is creative and error-prone. \textbf{Top-$k$} keeps only the $k$ most likely tokens.
+
+\textbf{Structured output.} Never parse free text in production. Constrain the model to a schema and return JSON:
+\begin{lstlisting}
+{"review": "one of the best movies of the year", "sentiment": "positive", "confidence": 0.51}
+\end{lstlisting}
+
+\begin{pitfall}[Confidence is not correctness]
+In our prompt suite the LoRA model labels every example ``positive'', even ``a dull, lifeless and forgettable film''. A 60\%-accurate model will be confidently wrong often; show confidence to users and route low-confidence cases to a human or a stronger model.
+\end{pitfall}
+
+\textbf{Throughput.} Batching more requests raises tokens per second much more than it raises per-step latency --- the idea behind vLLM's continuous batching and paged KV-cache.
+
+\begin{exercise}
+\begin{enumerate}
+  \item Train LoRA with rank $r\in\{2,8,32\}$. Plot accuracy against trainable parameters.
+  \item Balance the prompt suite and measure calibration: do 0.7-confidence answers come true 70\% of the time?
+  \item In class on a GPU: repeat Hour 13 with \texttt{Qwen2.5-0.5B} + \texttt{peft} on \texttt{databricks-dolly-15k}.
+\end{enumerate}
+\end{exercise}
+
+\begin{submitbox}
+Deliverable \textbf{P3 --- MiniLLM}: notebook, LoRA adapter weights, evaluation table (with baselines and the forgetting check) and a JSON-serving example in \texttt{P3-minillm/}. Tag \texttt{sunday-3}, create a Release, submit the link.
+\end{submitbox}
+
+\end{document}

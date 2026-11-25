@@ -1,0 +1,201 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{apnotes}
+\setsunday{1}
+\begin{document}
+
+\notestitle{Data \& Machine Learning Foundations}{1--5}{Think like a data scientist: frame a business problem, clean data, build and explain a model, track experiments, and ship project \textbf{P1 --- Churn Intelligence} to GitHub by 18:00.}
+
+\begin{tabularx}{\linewidth}{@{}c c X l@{}}
+\toprule
+\textbf{Hour} & \textbf{Mode} & \textbf{Focus} & \textbf{Dataset}\\
+\midrule
+1 & \teachtag & Scientific Python and exploratory data analysis (EDA) & \ds{UCI Adult Income}\\
+2 & \teachtag & ML pipelines, cross-validation, gradient boosting & \ds{California Housing}\\
+3 & \buildtag & Churn project: problem framing and a baseline & \ds{IBM Telco Churn}\\
+4 & \buildtag & Class imbalance, Optuna tuning, SHAP explanations & \ds{IBM Telco Churn}\\
+5 & \buildtag & MLflow tracking, repository, stakeholder summary & \ds{Telco + MLflow runs}\\
+\bottomrule
+\end{tabularx}
+
+\medskip
+Companion notebook: \texttt{notebooks/S01\_Data\_ML\_Foundations.ipynb}. Every number in a green box below was produced by running it.
+
+%% ------------------------------------------------------------------
+\hourhead{1}{TEACH}{Scientific Python \& Exploratory Data Analysis}{UCI Adult Income (48,842 rows)}{NumPy, Pandas, Matplotlib, data cleaning, EDA reasoning}
+
+\subsection{Why vectorisation matters}
+A Python loop handles one number at a time. NumPy applies the same operation to a whole array in compiled code.
+\begin{lstlisting}
+x = np.random.rand(1_000_000)
+s_loop = sum(v * v for v in x)      # slow: interpreted loop
+s_vec  = np.dot(x, x)               # fast: one call into optimised C
+\end{lstlisting}
+\begin{resultbox}
+Python loop 135.2\,ms versus NumPy 0.9\,ms --- about \textbf{154$\times$ faster}, same answer.
+\end{resultbox}
+
+\subsection{A data-quality checklist}
+Before any model, answer five questions about every dataset:
+\begin{enumerate}
+  \item \textbf{Shape and types} --- how many rows and columns; which are numeric, which categorical?
+  \item \textbf{Missing values} --- how many, in which columns, and \emph{why} are they missing?
+  \item \textbf{Duplicates} --- exact repeated rows inflate evaluation scores.
+  \item \textbf{Target balance} --- what share of rows are positive?
+  \item \textbf{Leakage} --- does any column contain information you would not have at prediction time?
+\end{enumerate}
+\begin{resultbox}
+Adult: 48,842 rows. Missing (``?''): \texttt{workclass} 5.73\%, \texttt{occupation} 5.75\%, \texttt{native\_country} 1.75\%. 52 duplicate rows removed. After cleaning, 23.9\% of people earn more than \$50K.
+\end{resultbox}
+
+\begin{keyidea}[Missing is information]
+Filling \texttt{occupation} with the mode hides a pattern. Making ``Unknown'' an explicit category keeps the rows \emph{and} lets the model learn whether missingness itself is predictive. Write every cleaning decision in your README.
+\end{keyidea}
+
+\figw[0.98]{s1_adult_eda.png}{EDA on Adult Income: share above \$50K rises with years of education; the higher-income group is older.}
+
+\begin{resultbox}
+Share earning more than \$50K: \textbf{30.4\%} of men versus \textbf{10.9\%} of women. This gap is a question to investigate, not just a feature --- we return to it in the Sunday 6 fairness audit.
+\end{resultbox}
+
+%% ------------------------------------------------------------------
+\hourhead{2}{TEACH}{Supervised ML pipelines, cross-validation, gradient boosting}{California Housing (20,640 districts)}{scikit-learn Pipelines, k-fold CV, XGBoost, feature engineering}
+
+\subsection{The golden rule: never touch the test set until the end}
+Split once into training (80\%) and test (20\%). Choose models using $k$-fold cross-validation on the training part only:
+\[
+\mathrm{CV\ RMSE}=\frac{1}{k}\sum_{i=1}^{k}\sqrt{\frac{1}{|F_i|}\sum_{j\in F_i}(y_j-\hat y_j)^2}
+\]
+where $F_i$ is the $i$-th fold, scored by a model trained on the other $k-1$ folds.
+
+\subsection{Pipelines prevent leakage}
+A \texttt{Pipeline} learns imputation and scaling \emph{inside each fold}, so statistics from validation rows never leak into training.
+\begin{lstlisting}
+prep = ColumnTransformer([
+  ("num", Pipeline([("impute", SimpleImputer(strategy="median")),
+                    ("scale", StandardScaler())]), num_cols),
+  ("cat", OneHotEncoder(handle_unknown="ignore"), ["ocean_proximity"])])
+pipe = Pipeline([("prep", prep), ("model", XGBRegressor(n_estimators=400))])
+\end{lstlisting}
+
+\textbf{Feature engineering.} Ratios such as rooms per household, bedrooms per room and people per household carry more signal than raw totals.
+
+\begin{resultbox}[From our notebook run: 5-fold CV on the training set]
+\begin{tabular}{lrr}
+\toprule
+Model & CV RMSE (\$) & std\\
+\midrule
+XGBoost & 45,339 & 967\\
+Random forest & 50,258 & 1,038\\
+Linear regression & 67,859 & 1,312\\
+\bottomrule
+\end{tabular}\\[4pt]
+Final XGBoost on the untouched test set: \textbf{RMSE \$44,355, $R^2=0.850$}.
+\end{resultbox}
+
+\figw[0.48]{s1_housing_pred.png}{Predicted versus actual house values. The horizontal band at \$500,001 is a cap in the data, not a model failure.}
+
+\begin{pitfall}[Capped targets]
+California Housing truncates expensive districts at \$500,001. Spot such artefacts during EDA and say how you handled them (keep, drop, or model separately).
+\end{pitfall}
+
+%% ------------------------------------------------------------------
+\hourhead{3}{BUILD}{Churn project: problem framing and a baseline}{IBM Telco Customer Churn (7,043 customers)}{Problem framing, baseline thinking, F1 / ROC-AUC}
+
+\subsection{Frame the problem before you model it}
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\textbf{Business question} & Which customers are likely to cancel next month, so the retention team can call them first?\\
+\textbf{Unit of prediction} & One customer.\\
+\textbf{Target} & \texttt{Churn = Yes}.\\
+\textbf{Metrics} & ROC-AUC (ranking quality) and F1 for the churn class.\\
+\end{tabularx}
+
+\begin{defbox}[Metrics for imbalanced classes]
+Precision $P=\frac{TP}{TP+FP}$, recall $R=\frac{TP}{TP+FN}$, and $F_1=\frac{2PR}{P+R}$.
+ROC-AUC is the probability that a random churner gets a higher score than a random non-churner.
+\end{defbox}
+
+\begin{resultbox}
+Churn rate 26.5\%. By contract: month-to-month 42.7\%, one-year 11.3\%, two-year 2.8\%.\\
+Majority-class dummy: ROC-AUC 0.500, F1 0.000 --- yet about 73\% accuracy.\\
+Logistic regression: ROC-AUC 0.846, F1 0.607.
+\end{resultbox}
+
+\begin{pitfall}[Accuracy hides failure]
+A model that never predicts churn is 73\% accurate and completely useless. On imbalanced problems, always report a class-aware metric and compare against a dummy baseline.
+\end{pitfall}
+
+%% ------------------------------------------------------------------
+\hourhead{4}{BUILD}{Improve the model: imbalance, Optuna, SHAP}{IBM Telco Customer Churn}{Optuna, class weighting, SHAP explainability}
+
+\textbf{Class weighting.} Instead of oversampling, weight positive examples by $\frac{\#\text{negatives}}{\#\text{positives}}=2.77$ (\texttt{scale\_pos\_weight}).
+
+\textbf{Optuna} searches hyperparameters with a Bayesian sampler (TPE): it proposes settings, scores them with cross-validation, and focuses on promising regions.
+\begin{lstlisting}
+def objective(trial):
+    params = dict(max_depth=trial.suggest_int("max_depth", 2, 6),
+                  learning_rate=trial.suggest_float("learning_rate", 0.01, 0.2, log=True), ...)
+    return cross_val_score(make_pipe(params), X_tr, y_tr, cv=4, scoring="roc_auc").mean()
+study = optuna.create_study(direction="maximize"); study.optimize(objective, n_trials=25)
+\end{lstlisting}
+
+\begin{resultbox}[Leaderboard on the held-out 25\% test set]
+\begin{tabular}{lrr}
+\toprule
+Model & ROC-AUC & F1 (churn)\\
+\midrule
+XGBoost + class weight + Optuna & \textbf{0.847} & \textbf{0.632}\\
+Logistic regression + class weight & 0.846 & 0.627\\
+Logistic regression & 0.846 & 0.607\\
+Majority-class dummy & 0.500 & 0.000\\
+\bottomrule
+\end{tabular}
+\end{resultbox}
+
+\begin{keyidea}[Honest reading of the leaderboard]
+Twenty-five rounds of tuning bought only 0.001 ROC-AUC over a plain logistic regression. Class weighting helped F1 more than tuning did. When a simple model is this close, prefer it: it is faster, easier to explain and easier to monitor.
+\end{keyidea}
+
+\subsection{SHAP: explaining the model to the business}
+SHAP splits each prediction into contributions from each feature, so that $\hat f(x)=\phi_0+\sum_j\phi_j(x)$.
+\figw[0.62]{s1_shap.png}{Top churn drivers by mean $|\text{SHAP}|$: month-to-month contract, short tenure, fibre-optic internet, no online security.}
+
+\begin{pitfall}[SHAP is not causation]
+SHAP shows what the \emph{model} relies on, not what \emph{causes} churn. Use it to suggest actions (a loyalty offer before month 12), then test those actions with an experiment.
+\end{pitfall}
+
+%% ------------------------------------------------------------------
+\hourhead{5}{BUILD}{Track experiments, publish, present}{Telco + MLflow runs}{MLflow, Git/GitHub workflow, technical storytelling}
+
+\begin{lstlisting}
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
+mlflow.set_experiment("P1-churn-intelligence")
+with mlflow.start_run(run_name="XGBoost + class weight + Optuna"):
+    mlflow.log_param("model", "xgboost"); mlflow.log_metrics({"roc_auc": 0.847, "f1_churn": 0.632})
+\end{lstlisting}
+Open the dashboard with \texttt{mlflow ui --backend-store-uri sqlite:///mlflow.db}.
+
+\textbf{One-page summary for a manager.} Question; data; best model and its held-out score; top three drivers; one recommendation; limits (one company, one snapshot, SHAP is not causation).
+
+\begin{exercise}
+\begin{enumerate}
+  \item Add \texttt{tenure} buckets (0--12, 13--24, 25+ months) as a feature. Does F1 change?
+  \item Choose the probability threshold that maximises F1 on a validation split instead of using 0.5.
+  \item Estimate the business value: if a call costs Rs.\,50 and a saved customer is worth Rs.\,3,000, which threshold maximises profit?
+\end{enumerate}
+\end{exercise}
+
+\begin{submitbox}
+Deliverable \textbf{P1 --- Churn Intelligence}: notebook, MLflow logs, SHAP plot and one-page summary in \texttt{P1-churn-intelligence/}.\\
+\texttt{git push origin main} $\rightarrow$ \texttt{git tag -a sunday-1 -m "Sunday 1 submission"} $\rightarrow$ \texttt{git push origin sunday-1} $\rightarrow$ create a GitHub Release $\rightarrow$ submit the link.
+\end{submitbox}
+
+\section*{Checklist before you leave}
+\begin{itemize}
+  \item[$\square$] Cleaning decisions written in the README
+  \item[$\square$] Dummy baseline reported next to every model
+  \item[$\square$] Test set used once, at the end
+  \item[$\square$] SHAP drivers translated into one business action
+  \item[$\square$] Tag \texttt{sunday-1} pushed before 18:00
+\end{itemize}
+
+\end{document}

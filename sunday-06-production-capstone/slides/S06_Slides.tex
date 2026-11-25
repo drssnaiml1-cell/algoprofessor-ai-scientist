@@ -1,0 +1,139 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\usetheme{AlgoProfessor}
+\setsunday{6}
+\title{Sunday 6: Production, Responsible AI \& Capstone}
+\subtitle{Hours 26--30 \;$\cdot$\; 2 h TEACH + 3 h BUILD \;$\cdot$\; Project P6 --- Capstone in Production}
+\author{Dr S Satyanarayana Ph.D., PDF(AI), FARSC \;$\cdot$\; Founder \& CEO, AlgoProfessor}
+\date{AI Scientist Hands-On \;$\cdot$\; Sunday Edition}
+\begin{document}
+\begin{frame}[plain]\titlepage\end{frame}
+
+\begin{frame}{Today at a glance}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{c c X l}
+\toprule
+\textbf{Hour} & \textbf{Mode} & \textbf{Focus} & \textbf{Dataset}\\
+\midrule
+26 & \teachtag & Service, tests, Docker, CI/CD, registry, drift & \ds{Telco + Housing}\\
+27 & \teachtag & Fairness, red-teaming, AI law basics & \ds{Adult + TruthfulQA}\\
+28 & \buildtag & Automated readiness audit & \ds{Your capstone}\\
+29 & \buildtag & Demo Day: 7-minute pitch & \ds{Your results}\\
+30 & \buildtag & Career Lab: mock interview, radar, 90 days & \ds{Interview bank}\\
+\bottomrule
+\end{tabularx}
+\vspace{6pt}
+\begin{block}{By 18:00 today}
+P6 --- Capstone in Production on GitHub, tagged \texttt{sunday-6}.
+\end{block}
+\end{frame}
+
+\hourslide{26}{TEACH}{MLOps: package, test, containerise, automate, monitor}{IBM Telco + California Housing (drift)}{FastAPI, pytest, Docker, GitHub Actions, registry, drift}
+
+\begin{frame}{The production loop}
+\begin{center}
+\begin{tikzpicture}[every node/.style={font=\small,rounded corners,minimum height=0.9cm,minimum width=2.1cm,align=center}]
+\node[fill=sun,text=white] (t) at (0,0) {Train};
+\node[fill=navy,text=gold] (r) at (2.8,0) {Registry};
+\node[fill=gold,text=navy] (c) at (5.6,0) {CI: test\\+ build};
+\node[fill=dataC,text=white] (s) at (8.4,0) {Serve API};
+\node[fill=warnC,text=white] (m) at (11.2,0) {Monitor drift};
+\foreach \a/\b in {t/r,r/c,c/s,s/m} \draw[-{Stealth},thick,navy] (\a)--(\b);
+\draw[-{Stealth},thick,warnC,dashed] (m.south) -- ++(0,-0.55) -| (t.south) node[pos=0.25,below,font=\scriptsize]{alert $\rightarrow$ retrain or roll back};
+\end{tikzpicture}
+\end{center}
+\begin{exampleblock}{Our run}
+\texttt{churn-logreg} v1, ROC-AUC 0.8438 $\cdot$ \textbf{4 tests passed} (health, high-risk, loyal customer lower, bad input $\rightarrow$ 422) $\cdot$ Dockerfile $\cdot$ CI workflow
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}{Drift: is today's data still like training data?}
+\centering\includegraphics[width=0.8\linewidth]{s6_drift.png}\\[2pt]
+\small PSI $=\sum_i (c_i-r_i)\ln\frac{c_i}{r_i}$ \quad major shift: longitude 2.03, latitude 1.07, income 0.33\quad
+RMSE \textbf{\$52,815} $\rightarrow$ \alert{\textbf{\$76,285}}
+\end{frame}
+
+\hourslide{27}{TEACH}{Responsible AI: fairness, red-teaming, law}{UCI Adult + TruthfulQA}{Fairlearn, bias mitigation, red-team playbooks, AI governance}
+
+\begin{frame}{Removing the column does not remove the bias}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{lrrr}
+\toprule
+Method & Acc & DP & EO\\
+\midrule
+Baseline & 0.854 & 0.189 & 0.137\\
+Reweighing & 0.849 & 0.102 & 0.082\\
+EO thresholds & 0.838 & 0.097 & \textbf{0.055}\\
+\bottomrule
+\end{tabular}\\[5pt]
+\small Selection rate: women 0.073, men 0.262 --- with \texttt{sex} \emph{not} an input
+\column{0.48\textwidth}\centering\includegraphics[width=\linewidth]{s6_fairness.png}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Red-teaming and the law}
+\begin{columns}[T]
+\column{0.48\textwidth}
+\begin{alertblock}{Red-team result}
+A naive retrieval system repeats the misconception \textbf{47.1\%} of the time --- Nutrition 87.5\%, Psychology 73.7\%.
+\end{alertblock}
+\small Playbook: misconceptions $\cdot$ prompt injection $\cdot$ personal data $\cdot$ jailbreaks $\cdot$ bias probes $\cdot$ over-confidence
+\column{0.48\textwidth}
+\begin{block}{EU AI Act}
+\small Unacceptable $\cdot$ high-risk (hiring, credit, education) $\cdot$ limited (transparency) $\cdot$ minimal
+\end{block}
+\begin{block}{India DPDP Act 2023}
+\small Purpose + consent $\cdot$ rights to access, correct, erase $\cdot$ breach reporting $\cdot$ Data Protection Board
+\end{block}
+\end{columns}
+\end{frame}
+
+\hourslide{28}{BUILD}{Capstone hardening: readiness audit}{Your capstone repository}{Testing, monitoring, audit docs, deployment}
+
+\begin{frame}{Ten checks before Demo Day}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\small README sections $\cdot$ requirements $\cdot$ tests present $\cdot$ tests pass $\cdot$ Dockerfile $\cdot$ CI $\cdot$ model card $\cdot$ fairness/safety audit $\cdot$ LICENSE $\cdot$ no secrets
+\column{0.46\textwidth}
+\begin{exampleblock}{Demo capstone}
+\textbf{8/10} --- missing \texttt{docs/audit.md} and \texttt{LICENSE}: two tickets before Demo Day
+\end{exampleblock}
+\end{columns}
+\end{frame}
+
+\hourslide{29}{BUILD}{Demo Day: a 7-minute pitch}{Your capstone results}{Product thinking, technical pitch, hard questions}
+
+\begin{frame}{The 7-minute structure}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{l l X}
+\toprule
+0:00 & Hook & The cost of the problem, in one number\\
+0:45 & Problem \& user & Who suffers and how they work today\\
+1:45 & Live demo & One real request, one real answer\\
+3:15 & Evidence & Held-out metric, readiness score, monitoring\\
+4:30 & Responsibility & Fairness audit, model card, human in control\\
+5:30 & Next & Experiment plan, retraining trigger\\
+6:30 & The ask & One concrete next step\\
+\bottomrule
+\end{tabularx}
+\end{frame}
+
+\hourslide{30}{BUILD}{Career Lab}{Interview question bank}{Interview performance, portfolio positioning, founder basics}
+
+\begin{frame}{Mock interview, radar, 90 days}
+\begin{columns}[c]
+\column{0.4\textwidth}\centering\includegraphics[width=0.95\linewidth]{s6_radar.png}
+\column{0.56\textwidth}
+\begin{block}{Answer with your own evidence}
+\small ``Why did the CNN collapse under noise in P2 while the ViT did not?''
+\end{block}
+\small \textbf{Days 1--30:} polish six repos, one blog post each\\
+\textbf{Days 31--60:} real users for the capstone, one competition\\
+\textbf{Days 61--90:} 30+ targeted applications, referrals, mock interviews
+\begin{block}{Submit by 18:00 --- P6}
+Live URL $\cdot$ CI badge $\cdot$ audit $\cdot$ model card $\cdot$ pitch deck $\rightarrow$ tag \texttt{sunday-6}
+\end{block}
+\end{columns}
+\end{frame}
+\end{document}

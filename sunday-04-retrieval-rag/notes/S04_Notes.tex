@@ -1,0 +1,159 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{apnotes}
+\setsunday{4}
+%% ---- timings vary by machine; filled from the executed notebook ----
+\newcommand{\tFlat}{465.6}
+\newcommand{\tIVF}{47.0}
+\newcommand{\tHNSW}{43.6}
+\newcommand{\rIVF}{0.842}
+\newcommand{\rHNSW}{0.980}
+\begin{document}
+
+\notestitle{Embeddings, Retrieval \& RAG}{16--20}{Build the retrieval systems behind most enterprise AI products --- vector search, hybrid ranking, cited answers that know when to say ``I don't know'' --- and measure them. Project \textbf{P4 --- PolicyGPT}.}
+
+\begin{tabularx}{\linewidth}{@{}c c X l@{}}
+\toprule
+\textbf{Hour} & \textbf{Mode} & \textbf{Focus} & \textbf{Dataset}\\
+\midrule
+16 & \teachtag & Embeddings, vector search, FAISS (Flat, IVF, HNSW) & \ds{SST-2 sentences}\\
+17 & \teachtag & Hybrid BM25 + dense retrieval, re-ranking, metrics & \ds{TruthfulQA}\\
+18 & \buildtag & PolicyGPT: PDF ingestion, chunking with page metadata & \ds{Course syllabus PDF}\\
+19 & \buildtag & Cited Q\&A API with abstention (FastAPI) & \ds{Course syllabus PDF}\\
+20 & \buildtag & Evaluation: dev set to tune, golden set to test & \ds{8 dev + 25 golden questions}\\
+\bottomrule
+\end{tabularx}
+
+\medskip
+Companion notebook: \texttt{notebooks/S04\_Retrieval\_RAG.ipynb}. In class PolicyGPT ingests NEP 2020 and UGC/AICTE regulation PDFs; the executed copy uses this course's own syllabus PDF so you can check every answer yourself.
+
+%% ------------------------------------------------------------------
+\hourhead{16}{TEACH}{Embeddings and vector search with FAISS}{SST-2 sentences (8,741) as a search corpus}{Embeddings, vector databases, ANN indexing (IVF, HNSW)}
+
+An \textbf{embedding} maps text to a vector so that similar meanings land close together. With unit-length vectors, cosine similarity is just a dot product: $\cos(u,v)=u^\top v$.
+
+We build 256-dimensional embeddings with \textbf{LSA} (TF-IDF followed by truncated SVD), which needs no download; in class, swap in a sentence-transformer such as \texttt{all-MiniLM-L6-v2}. The FAISS code does not change.
+
+\begin{lstlisting}
+flat = faiss.IndexFlatIP(d); flat.add(E)                      # exact
+ivf  = faiss.IndexIVFFlat(faiss.IndexFlatIP(d), d, 64, faiss.METRIC_INNER_PRODUCT)
+ivf.train(E); ivf.add(E); ivf.nprobe = 6                       # search 6 of 64 clusters
+hnsw = faiss.IndexHNSWFlat(d, 32, faiss.METRIC_INNER_PRODUCT); hnsw.add(E)   # graph
+\end{lstlisting}
+
+\begin{resultbox}[500 queries, top-10 neighbours (timings depend on the machine and its load)]
+\begin{tabular}{lrr}
+\toprule
+Index & Recall@10 vs exact & $\mu$s per query\\
+\midrule
+Flat (exact) & 1.000 & \tFlat\\
+IVF (64 lists, nprobe 6) & \rIVF & \tIVF\\
+HNSW ($M=32$) & \rHNSW & \tHNSW\\
+\bottomrule
+\end{tabular}\\[3pt]
+Query ``a heartwarming film for the whole family'' returns ``a film that will enthrall the whole family''.
+\end{resultbox}
+
+\begin{keyidea}[Approximate search is a dial]
+IVF scans only a few clusters; HNSW walks a navigable graph. Both trade a little recall for large speed-ups --- essential at millions of vectors. Chroma and pgvector add storage, metadata filters and SQL on top of the same ideas.
+\end{keyidea}
+
+%% ------------------------------------------------------------------
+\hourhead{17}{TEACH}{Hybrid retrieval, re-ranking and retrieval metrics}{TruthfulQA (790 questions + look-alike false answers)}{BM25 + dense hybrid, re-rankers, Recall@k, MRR, nDCG}
+
+\textbf{The task.} For each question, find its \emph{true} best answer in a corpus that also contains every question's best \emph{incorrect} answer --- a hard negative that often uses the same words.
+
+\begin{defbox}[BM25, fusion and metrics]
+\textbf{BM25} scores a document by term frequency (with saturation) and rarity (IDF), normalised by length.
+\textbf{Reciprocal-rank fusion:} $\mathrm{RRF}(d)=\sum_{r}\frac{1}{k+\mathrm{rank}_r(d)}$ with $k=60$.
+\textbf{Recall@k:} share of questions whose gold answer is in the top $k$. \textbf{MRR:} mean of $1/\mathrm{rank}$.
+\textbf{nDCG@10:} $\frac{1}{\log_2(\mathrm{rank}+1)}$ if rank $\le 10$, else 0.
+\end{defbox}
+
+\begin{resultbox}[All 790 questions]
+\begin{tabular}{lrrrrr}
+\toprule
+Retriever & R@1 & R@5 & MRR & nDCG@10 & Misconception@1\\
+\midrule
+BM25 & 0.377 & 0.772 & 0.567 & 0.625 & 0.471\\
+Dense (LSA) & 0.384 & 0.737 & 0.547 & 0.600 & 0.381\\
+Hybrid (RRF) & \textbf{0.462} & \textbf{0.772} & \textbf{0.609} & \textbf{0.657} & \textbf{0.362}\\
+\bottomrule
+\end{tabular}\\[3pt]
+Learned re-ranker on the held-out half: hybrid R@1 0.468 $\rightarrow$ with re-ranker 0.423 (worse).
+\end{resultbox}
+\figw[0.7]{s4_retrieval.png}{Recall and misconception rate. Hybrid fusion helps; hand-made re-ranking features do not.}
+
+\begin{keyidea}[Retrieval finds matches, not truth]
+BM25 puts the question's own \emph{false} answer first 47\% of the time. A RAG system inherits whatever its corpus says, so curate the corpus. And always test a re-ranker on held-out questions: our hand-made features cannot tell a true statement from a fluent false one; a cross-encoder that reads query and passage together is the real fix.
+\end{keyidea}
+
+%% ------------------------------------------------------------------
+\hourhead{18}{BUILD}{PolicyGPT: ingest and chunk a real PDF}{Course syllabus PDF (20 pages; NEP 2020 / UGC PDFs in class)}{PDF parsing, chunking strategy, metadata}
+
+\begin{lstlisting}
+reader = PdfReader("../../syllabus/AlgoProfessor_AI_Scientist_Syllabus.pdf")
+pages = [(i + 1, clean(p.extract_text())) for i, p in enumerate(reader.pages)]
+chunks = sliding_windows(pages, size=90, overlap=30)     # every chunk keeps its page number
+\end{lstlisting}
+\begin{resultbox}
+20 pages, 4,761 words $\rightarrow$ 79 chunks of about 90 words, each tagged with its page for citations.
+\end{resultbox}
+
+\textbf{Chunking trade-off:} small chunks give precise citations but lose context; large chunks keep context but dilute relevance. Overlap stops facts being cut in half at a boundary.
+
+%% ------------------------------------------------------------------
+\hourhead{19}{BUILD}{Cited Q\&A API with abstention}{Course syllabus PDF}{Hybrid search, grounded citations, abstention, FastAPI}
+
+\textbf{Pipeline:} hybrid retrieval of the top 3 chunks $\rightarrow$ coverage check $\rightarrow$ extract the best 25-word span $\rightarrow$ return the answer with page citations.
+
+\begin{defbox}[Coverage-based abstention]
+$\mathrm{coverage}(q)=\dfrac{\sum_{w\in q,\;w\in\text{chunks}}\mathrm{idf}(w)}{\sum_{w\in q}\mathrm{idf}(w)}$. Words the documents never use get the highest IDF. If coverage is below a threshold, answer ``I can't find this in the documents.''
+\end{defbox}
+
+\begin{resultbox}
+``What is the programme fee in India?'' $\rightarrow$ ``\ldots Programme fee INR 50,000 (Hyderabad \& Shirdi, India)'' [p.\,1].\\
+``What is the hostel fee?'' $\rightarrow$ \emph{abstains} (coverage 0.40): ``fee'' matches, ``hostel'' appears nowhere.
+\end{resultbox}
+
+\begin{lstlisting}
+@app.post("/ask")
+def ask(req: Ask): return {"question": req.question, **answer(req.question, req.k)}
+# run: uvicorn policygpt_api:app --reload
+\end{lstlisting}
+
+%% ------------------------------------------------------------------
+\hourhead{20}{BUILD}{Evaluate: dev set to tune, golden set to test}{8-question dev set + 25-question golden set}{RAG evaluation, hallucination measurement, regression testing}
+
+\textbf{Method.} Choose the abstention threshold on a separate \emph{dev} set (5 answerable + 3 unanswerable). Then report once on the untouched \emph{golden} set (20 answerable + 5 unanswerable).
+
+\begin{resultbox}[Golden set, threshold 0.50 chosen on the dev set]
+\begin{tabular}{lr}
+\toprule
+Retrieval hit@3 (answerable) & 0.95\\
+Answer contains the gold fact (answerable) & 0.60\\
+Wrongly abstained (answerable) & 0.00\\
+Correctly abstained (unanswerable) & 1.00\\
+Faithfulness (answer words found in cited chunks) & 1.00\\
+\bottomrule
+\end{tabular}
+\end{resultbox}
+
+\begin{pitfall}[How we got here]
+Version 1 used a hand-picked threshold and wrongly abstained on 55\% of answerable questions, because question words like ``earns'' and ``covers'' never appear in the documents. Ignoring question-phrasing words and tuning on a dev set fixed it. Never tune on the set you report.
+\end{pitfall}
+
+\textbf{Failure analysis.} Where retrieval hit@3 is true but the answer is wrong, the right page was found and the simple span-picker chose the wrong 25 words. An LLM generator does that step better --- with the same citations and the same abstention rule. Keep the golden set in \texttt{tests/} and re-run it on every change; grow it to 100 questions as a team. In class, add \texttt{ragas} faithfulness and answer-relevance scores.
+
+\begin{exercise}
+\begin{enumerate}
+  \item Change chunk size to 50 and 150 words. How do hit@3 and answer accuracy move?
+  \item Add five more unanswerable questions that share words with the syllabus. Does abstention still hold?
+  \item Replace LSA with \texttt{all-MiniLM-L6-v2} embeddings and compare the TruthfulQA table.
+\end{enumerate}
+\end{exercise}
+
+\begin{submitbox}
+Deliverable \textbf{P4 --- PolicyGPT}: notebook, \texttt{src/policygpt\_api.py}, golden set in \texttt{tests/}, evaluation table and failure log in \texttt{P4-policygpt/}. Tag \texttt{sunday-4}, create a Release, submit the link.
+\end{submitbox}
+
+\end{document}

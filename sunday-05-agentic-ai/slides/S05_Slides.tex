@@ -1,0 +1,151 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\usetheme{AlgoProfessor}
+\setsunday{5}
+\title{Sunday 5: Agentic AI Systems}
+\subtitle{Hours 21--25 \;$\cdot$\; 2 h TEACH + 3 h BUILD \;$\cdot$\; Project P5 --- ScholarAgent}
+\author{Dr S Satyanarayana Ph.D., PDF(AI), FARSC \;$\cdot$\; Founder \& CEO, AlgoProfessor}
+\date{AI Scientist Hands-On \;$\cdot$\; Sunday Edition}
+\begin{document}
+\begin{frame}[plain]\titlepage\end{frame}
+
+\begin{frame}{Today at a glance}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{c c X l}
+\toprule
+\textbf{Hour} & \textbf{Mode} & \textbf{Focus} & \textbf{Dataset}\\
+\midrule
+21 & \teachtag & Tool use, function calling, ReAct, MCP & \ds{Syllabus multi-hop}\\
+22 & \teachtag & Planner $\rightarrow$ executor $\rightarrow$ critic, guardrails & \ds{GSM8K (1,319)}\\
+23 & \buildtag & ScholarAgent: cited literature summary & \ds{arXiv / offline index}\\
+24 & \buildtag & Sandboxed code execution & \ds{UCI Adult}\\
+25 & \buildtag & Evals, traces, cost, human approval & \ds{12-task suite}\\
+\bottomrule
+\end{tabularx}
+\vspace{6pt}
+\begin{block}{By 18:00 today}
+P5 --- ScholarAgent on GitHub, tagged \texttt{sunday-5}.
+\end{block}
+\end{frame}
+
+\hourslide{21}{TEACH}{Tool use, function calling and ReAct}{Multi-hop questions over the syllabus PDF}{Function calling, ReAct prompting, MCP tools}
+
+\begin{frame}{Reason $\rightarrow$ Act $\rightarrow$ Observe}
+\begin{center}
+\begin{tikzpicture}[node distance=0.6cm and 1.2cm, every node/.style={font=\small,rounded corners,minimum width=2.4cm,minimum height=0.9cm}]
+\node[fill=sun,text=white] (r) {Reason};
+\node[fill=gold,text=navy,right=of r] (a) {Act: call a tool};
+\node[fill=dataC,text=white,right=of a] (o) {Observe};
+\node[fill=navy,text=gold,right=of o] (f) {Final answer};
+\draw[-{Stealth},thick,navy] (r)--(a); \draw[-{Stealth},thick,navy] (a)--(o); \draw[-{Stealth},thick,gold] (o)--(f);
+\draw[-{Stealth},thick,navy] (o.south) -- ++(0,-0.5) -| (r.south);
+\end{tikzpicture}
+\end{center}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{exampleblock}{Two-hop answer}
+\small \texttt{search} $\rightarrow$ LeafDoctor is Sunday 2\\ \texttt{lookup\_hour(6)} $\rightarrow$ Fashion-MNIST
+\end{exampleblock}
+\column{0.46\textwidth}
+\begin{alertblock}{Safe calculator}
+\small \texttt{\_\_import\_\_('os').system(...)} $\rightarrow$ blocked
+\end{alertblock}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Structured tools and MCP}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{block}{Lesson from our first run}
+Free-text search for both hops fetched the wrong page. A structured \texttt{lookup\_hour} tool fixed it.
+\end{block}
+\column{0.46\textwidth}
+\begin{block}{MCP}
+One standard for advertising tools: name, description, JSON input schema. Any MCP client can call them.\\[3pt]
+\small \texttt{@mcp.tool() def search\_syllabus(q): \ldots}
+\end{block}
+\end{columns}
+\end{frame}
+
+\hourslide{22}{TEACH}{Planner, executor, critic}{GSM8K test set (1,319 problems)}{LangGraph-style state machines, self-critique, guardrails}
+
+\begin{frame}{An agent team that checks reasoning}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{enumerate}
+\item \textbf{Planner:} extract \texttt{<<16-3-4=9>>} steps
+\item \textbf{Executor:} recompute with the calculator
+\item \textbf{Critic:} accept or flag
+\end{enumerate}
+\begin{exampleblock}{Our run}
+1,301 accepted $\cdot$ 18 no steps $\cdot$ \textbf{0 flagged}\\ 3.25 steps per problem
+\end{exampleblock}
+\column{0.46\textwidth}
+\begin{alertblock}{First run flagged 6}
+All were format noise (\texttt{+8}, \texttt{3/4}), not maths errors. Inspect failures before trusting a rate.
+\end{alertblock}
+\begin{block}{Guardrails}
+Arithmetic-only tool $\cdot$ step limit $\cdot$ hop limit $\cdot$ memory for audit
+\end{block}
+\end{columns}
+\end{frame}
+
+\hourslide{23}{BUILD}{ScholarAgent: an AI research-scientist agent}{arXiv API (live in class) / offline index}{API tools, rate limits, citation tracking}
+
+\begin{frame}{Cite only what you retrieved}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{enumerate}
+\item Search arXiv; on failure use the offline index \emph{and say so}
+\item Keep clearly relevant papers only
+\item Write a numbered, cited summary
+\end{enumerate}
+\column{0.46\textwidth}
+\begin{exampleblock}{Our run}
+\small ``efficient fine-tuning \ldots low rank adaptation'' $\rightarrow$ \emph{LoRA}, Hu et al.\ (2021), arXiv:2106.09685
+\end{exampleblock}
+\begin{alertblock}{Never invent a citation}
+Stop rather than guess when nothing is found.
+\end{alertblock}
+\end{columns}
+\end{frame}
+
+\hourslide{24}{BUILD}{Sandboxed code-execution agent}{UCI Adult (baseline reproduction)}{Sandboxing, permission boundaries, reproducibility}
+
+\begin{frame}{Defence in depth}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{enumerate}
+\item Static check: no OS, network or \texttt{eval}
+\item Separate isolated process
+\item Memory cap, time limit, empty environment
+\item Production: container with \texttt{--network none}
+\end{enumerate}
+\column{0.46\textwidth}
+\begin{exampleblock}{Our run}
+Baseline on Adult: \textbf{0.8515 $\pm$ 0.0023} (5-fold)
+\end{exampleblock}
+\begin{alertblock}{Blocked}
+\texttt{import os} $\cdot$ \texttt{\_\_import\_\_} $\cdot$ a 10-billion-item list (memory limit)
+\end{alertblock}
+\end{columns}
+\end{frame}
+
+\hourslide{25}{BUILD}{Agent evaluation and observability}{12-task agent test suite}{Agent evals, tracing, cost control, human-in-the-loop}
+
+\begin{frame}{Measure agents like any system}
+\begin{columns}[c]
+\column{0.5\textwidth}\centering\includegraphics[width=\linewidth]{s5_agent_outcomes.png}
+\column{0.46\textwidth}
+\begin{exampleblock}{Our run}
+Success \textbf{7/12} $\cdot$ mis-extracted 4 $\cdot$ answered an unanswerable question 1 $\cdot$ 1.5 steps per task $\cdot$ $<$1 US cent
+\end{exampleblock}
+\begin{block}{Human approval}
+\texttt{send\_email} $\rightarrow$ \texttt{PENDING\_APPROVAL}
+\end{block}
+\end{columns}
+\vspace{4pt}
+\begin{block}{Submit by 18:00 --- P5 ScholarAgent}
+Notebook $\cdot$ tools module $\cdot$ test suite + results $\cdot$ trace log $\rightarrow$ tag \texttt{sunday-5}
+\end{block}
+\end{frame}
+\end{document}

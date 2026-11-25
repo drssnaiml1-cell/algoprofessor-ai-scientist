@@ -147,6 +147,9 @@ section.dark .sec-head p{color:#c3cede}
 .deliv{margin-top:14px;background:var(--goldlt);border:1px solid var(--gold);border-radius:10px;padding:14px 16px;font-size:1rem}
 .deliv b{color:var(--navy)}
 .deliv .dl{color:#b35c00;font-weight:700}
+.mats{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.btn.mat{background:#fff;color:var(--navy)}
+.btn.mat:hover{background:var(--goldlt);transform:translateY(-2px)}
 
 /* ---------- SKILLS ---------- */
 .skills{display:grid;grid-template-columns:1.1fr 1fr;gap:30px;align-items:start}
@@ -596,6 +599,10 @@ const SUNDAYS=[
   ['BUILD','Career Lab: mock interviews (ML system design, coding, LLM depth), CV/GitHub/LinkedIn review, start-up clinic.','Interview question bank',['Interview performance','Portfolio positioning','Founder basics']]],
   d:['P6','Capstone in Production','Live URL, CI badge, audit report, pitch deck, mock-interview feedback sheet.']}
 ];
+const MAT=[["sunday-01-data-ml","S01","S01_Data_ML_Foundations"],["sunday-02-deep-learning","S02","S02_Deep_Learning_PyTorch"],
+ ["sunday-03-transformers-llm","S03","S03_Transformers_LLM_Engineering"],["sunday-04-retrieval-rag","S04","S04_Retrieval_RAG"],
+ ["sunday-05-agentic-ai","S05","S05_Agentic_AI_Systems"],["sunday-06-production-capstone","S06","S06_Production_Responsible_AI"]];
+const COLAB="https://colab.research.google.com/github/drssnaiml1-cell/algoprofessor-ai-scientist/blob/main/";
 const SKILLS=[
  ['Programming & Maths',10,'#0F6E7A','Hours 1–6',['Python 3','NumPy','Pandas','Jupyter','Git/GitHub','Linear algebra for ML','Probability & statistics','Gradient descent','Vectorised code','Debugging']],
  ['Data & Classical ML',10,'#0F6E7A','Hours 1–5',['EDA','Data cleaning','Feature engineering','scikit-learn pipelines','Cross-validation','XGBoost/LightGBM','Imbalanced data','Optuna tuning','SHAP explainability','MLflow tracking']],
@@ -654,7 +661,11 @@ function renderSunday(i){
   $('#sunday').innerHTML=`<div class="sunday-head" style="background:${S.c}"><div><h3>Sunday ${S.n} — ${esc(S.t)}</h3><div class="goal">${esc(S.goal)}</div></div><div style="font-size:1.1rem;font-weight:700;color:#fff">Hours ${start+1}–${start+5}</div></div>
   <div class="hours">${S.hours.map((h,k)=>`<div class="hour"><div class="hnum"><b>${start+k+1}</b><span class="tag ${h[0]}">${h[0]}</span></div>
    <div><h4>${esc(h[1])}</h4><div class="chips"><span class="chip ds">▣ ${esc(h[2])}</span>${h[3].map(x=>`<span class="chip sk">${esc(x)}</span>`).join('')}</div></div></div>`).join('')}
-   <div class="deliv"><b>Deliverable ${S.d[0]}: <i>${esc(S.d[1])}</i></b> — ${esc(S.d[2])}<br><span class="dl">GitHub deadline: 18:00 local time, Sunday ${S.n}</span> · push, tag <b>sunday-${S.n}</b>, submit the release link.</div></div>`;
+   <div class="deliv"><b>Deliverable ${S.d[0]}: <i>${esc(S.d[1])}</i></b> — ${esc(S.d[2])}<br><span class="dl">GitHub deadline: 18:00 local time, Sunday ${S.n}</span> · push, tag <b>sunday-${S.n}</b>, submit the release link.</div>
+   <div class="mats">${(([d,c,nb])=>`<a class="btn small mat" style="border-color:${S.c}" href="${d}/notes/${c}_Notes.pdf" target="_blank" rel="noopener">📘 Student notes (PDF)</a>
+     <a class="btn small mat" style="border-color:${S.c}" href="${d}/slides/${c}_Slides.pdf" target="_blank" rel="noopener">🖥️ Slides (PDF)</a>
+     <a class="btn small mat" style="border-color:${S.c}" href="${d}/notebooks/${nb}.ipynb" target="_blank" rel="noopener">💻 Notebook</a>
+     <a class="btn small mat" style="border-color:${S.c}" href="${COLAB}${d}/notebooks/${nb}.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>`)(MAT[i])}</div></div>`;
 }
 $('#tabs').innerHTML=SUNDAYS.map((S,i)=>`<button class="tab" data-i="${i}">Sunday ${S.n}<small>${esc(S.short)}</small></button>`).join('');
 $$('.tab').forEach(b=>b.onclick=()=>renderSunday(+b.dataset.i));

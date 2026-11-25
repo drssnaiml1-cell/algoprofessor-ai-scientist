@@ -3,3 +3,14 @@
 *.out
 *.toc
 *.synctex.gz
+# course materials: downloaded data and generated artefacts
+data/
+**/notebooks/mlflow.db
+**/notebooks/mlruns/
+**/notebooks/*.onnx
+**/notebooks/capstone_demo/
+**/notebooks/MODEL_CARD.md
+*.nav
+*.snm
+*.vrb
+.ipynb_checkpoints/

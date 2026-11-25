@@ -1,0 +1,145 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{apnotes}
+\setsunday{6}
+\begin{document}
+
+\notestitle{Production, Responsible AI \& Capstone}{26--30}{Ship one project to production with tests, a container, CI and monitoring; audit it for fairness and safety; pitch it at Demo Day; rehearse interviews. Project \textbf{P6 --- Capstone in Production}.}
+
+\begin{tabularx}{\linewidth}{@{}c c X l@{}}
+\toprule
+\textbf{Hour} & \textbf{Mode} & \textbf{Focus} & \textbf{Dataset}\\
+\midrule
+26 & \teachtag & Service, tests, Docker, CI/CD, registry, drift monitoring & \ds{Telco + California Housing}\\
+27 & \teachtag & Fairness metrics \& mitigation, red-teaming, AI law basics & \ds{UCI Adult + TruthfulQA}\\
+28 & \buildtag & Capstone hardening: automated readiness audit & \ds{Your capstone repo}\\
+29 & \buildtag & Demo Day: 7-minute pitch from real results & \ds{Your results}\\
+30 & \buildtag & Career Lab: mock interview, skills radar, 90-day plan & \ds{Interview bank}\\
+\bottomrule
+\end{tabularx}
+
+\medskip
+Companion notebook: \texttt{notebooks/S06\_Production\_Responsible\_AI.ipynb}. It writes a complete demo service into \texttt{capstone\_demo/} that you can copy as a template.
+
+%% ------------------------------------------------------------------
+\hourhead{26}{TEACH}{MLOps: package, test, containerise, automate, monitor}{IBM Telco (service) + California Housing (drift)}{FastAPI, pytest, Docker, GitHub Actions, model registry, drift detection}
+
+\begin{center}
+\begin{tikzpicture}[every node/.style={font=\small,rounded corners,minimum height=0.8cm,minimum width=1.9cm,align=center}]
+\node[fill=sun,text=white] (t) at (0,0) {Train};
+\node[fill=navy,text=gold] (r) at (2.5,0) {Registry\\v1, v2 \ldots};
+\node[fill=gold,text=navy] (c) at (5.0,0) {CI: tests\\+ build};
+\node[fill=dataC,text=white] (s) at (7.5,0) {Serve\\(API)};
+\node[fill=warnC,text=white] (m) at (10.0,0) {Monitor\\drift};
+\foreach \a/\b in {t/r,r/c,c/s,s/m} \draw[-{Stealth},thick,navy] (\a) -- (\b);
+\draw[-{Stealth},thick,warnC,dashed] (m.south) -- ++(0,-0.5) -| (t.south) node[pos=0.25,below,font=\scriptsize]{alert $\rightarrow$ retrain (or roll back)};
+\end{tikzpicture}
+\captionof{figure}{The production loop. Every arrow is automated; every model version is kept.}
+\end{center}
+
+\textbf{What the notebook builds} (\texttt{capstone\_demo/}): \texttt{app/main.py} (FastAPI with input validation and \texttt{/health}), \texttt{tests/test\_api.py}, \texttt{Dockerfile} (slim image, non-root user), \texttt{.github/workflows/ci.yml} (test, then build the image on every push) and a file-based model registry.
+
+\begin{resultbox}
+Registered model \texttt{churn-logreg} v1, ROC-AUC 0.8438. \textbf{4 tests passed}: health check; a new month-to-month fibre customer is high risk; a loyal two-year customer scores lower; invalid input (negative tenure, unknown contract) is rejected with HTTP 422.
+\end{resultbox}
+
+\subsection{Drift monitoring}
+\begin{defbox}[Population Stability Index]
+Bin a feature by reference quantiles; with reference shares $r_i$ and current shares $c_i$:
+$\mathrm{PSI}=\sum_i (c_i-r_i)\ln\frac{c_i}{r_i}$. Rule of thumb: below 0.1 stable, 0.1--0.25 moderate, above 0.25 major shift.
+\end{defbox}
+
+\begin{resultbox}[Coastal districts as ``last month'', inland districts as ``this month'']
+Major shift (PSI $>0.25$): longitude 2.03, latitude 1.07, median income 0.33, housing age 0.28. Stable: rooms, population, households.\\
+Model RMSE: \textbf{\$52,815} on the reference hold-out $\rightarrow$ \textbf{\$76,285} on the drifted data.
+\end{resultbox}
+\figw[0.95]{s6_drift.png}{Left: median income shifts down inland. Right: PSI by feature; red bars cross the major-shift line.}
+
+%% ------------------------------------------------------------------
+\hourhead{27}{TEACH}{Responsible AI: fairness, red-teaming, law}{UCI Adult (fairness) + TruthfulQA (red-teaming)}{Fairlearn, bias mitigation, red-team playbooks, AI governance}
+
+\begin{defbox}[Two fairness definitions]
+\textbf{Demographic parity difference:} the gap in positive-prediction rates between groups.\\
+\textbf{Equalized odds difference:} the larger of the gaps in true-positive rate and false-positive rate.
+\end{defbox}
+
+\begin{resultbox}[Baseline income model --- \texttt{sex} is not an input, yet groups are treated differently]
+\begin{tabular}{lrrrr}
+\toprule
+Group & Selection rate & TPR & FPR & Accuracy\\
+\midrule
+Female & 0.073 & 0.494 & 0.020 & 0.925\\
+Male & 0.262 & 0.631 & 0.101 & 0.817\\
+\bottomrule
+\end{tabular}
+\end{resultbox}
+
+\begin{resultbox}[Mitigation]
+\begin{tabular}{lrrr}
+\toprule
+Method & Accuracy & DP difference & EO difference\\
+\midrule
+Baseline & 0.854 & 0.189 & 0.137\\
+Reweighing (pre-processing) & 0.849 & 0.102 & 0.082\\
+Equalized-odds thresholds (post-processing) & 0.838 & 0.097 & \textbf{0.055}\\
+\bottomrule
+\end{tabular}
+\end{resultbox}
+\figw[0.62]{s6_fairness.png}{Mitigation narrows the gaps at a small cost in accuracy.}
+
+\begin{keyidea}[Removing the sensitive column is not enough]
+Marital status, relationship and occupation carry information about sex, so a model without the \texttt{sex} column still treats groups differently. Which fairness definition to enforce depends on the decision (loans, hiring, screening) --- a human and legal choice, recorded in your audit.
+\end{keyidea}
+
+\textbf{Red-teaming.} A naive ``answer with the nearest stored statement'' system, probed with TruthfulQA, repeats the question's own misconception \textbf{47.1\%} of the time --- worst on Nutrition (87.5\%) and Psychology (73.7\%). Keep a playbook in \texttt{docs/redteam.md}: misconceptions, prompt injection inside documents, requests for personal data, jailbreak role-play, harmful advice, bias probes with swapped names, over-confident answers to unanswerable questions.
+
+\textbf{AI law basics (not legal advice).}
+\begin{itemize}
+  \item \textbf{EU AI Act} --- risk tiers: \emph{unacceptable} (banned); \emph{high-risk} (e.g.\ hiring, credit, education scoring: risk management, data governance, human oversight, logging); \emph{limited} (transparency, e.g.\ telling users they are talking to AI); \emph{minimal}.
+  \item \textbf{India DPDP Act 2023} --- personal data needs a lawful purpose and consent; data principals can access, correct and erase their data; data fiduciaries must protect data and report breaches; enforced by the Data Protection Board of India.
+\end{itemize}
+
+%% ------------------------------------------------------------------
+\hourhead{28}{BUILD}{Capstone hardening: automated readiness audit}{Your capstone repository}{Testing, monitoring, audit documentation, deployment readiness}
+
+The notebook's audit runs ten checks: README sections, \texttt{requirements.txt}, tests present, tests pass, \texttt{Dockerfile}, CI workflow, model card, fairness/safety audit, \texttt{LICENSE}, no secrets in code.
+\begin{resultbox}
+Demo capstone: \textbf{8/10}. Missing: \texttt{docs/audit.md} and \texttt{LICENSE} --- two tickets before Demo Day.
+\end{resultbox}
+
+%% ------------------------------------------------------------------
+\hourhead{29}{BUILD}{Demo Day: a 7-minute pitch from real results}{Your capstone results}{Product thinking, technical pitch, handling hard questions}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Time} & \textbf{Slide} & \textbf{Say this}\\
+\midrule
+0:00--0:45 & Hook & The cost of the problem, in one number.\\
+0:45--1:45 & Problem \& user & Who suffers today and how they work now.\\
+1:45--3:15 & Live demo & One real request, one real answer.\\
+3:15--4:30 & Evidence & Held-out metric, readiness score, monitoring.\\
+4:30--5:30 & Responsibility & Fairness audit, model card, human in control.\\
+5:30--6:30 & What's next & Experiment plan and retraining trigger.\\
+6:30--7:00 & The ask & One concrete next step for the panel.\\
+\bottomrule
+\end{tabularx}
+
+\textbf{Rehearse:} What happens when the data drifts? How do you know it is fair? What does a false positive cost compared with a false negative? Why this model and not a bigger one? What would make you switch it off?
+
+%% ------------------------------------------------------------------
+\hourhead{30}{BUILD}{Career Lab: mock interviews, skills radar, 90-day plan}{Interview question bank}{Interview performance, portfolio positioning, founder basics}
+
+The notebook draws a 6-question mock interview (ML fundamentals, deep learning, LLMs and agents, system design, responsible AI, behavioural). Answer each in 5 minutes, using your own projects as evidence --- for example, \emph{``Why did the CNN collapse under noise in P2 while the ViT did not?''}
+
+\figw[0.5]{s6_radar.png}{Skills radar with example ratings --- replace them with your own honest self-assessment.}
+
+\textbf{90-day plan.} Days 1--30: polish all six repositories and write one blog post per project. Days 31--60: put the capstone in front of real users; enter one competition. Days 61--90: apply to 30+ targeted roles with referrals; keep doing mock interviews.
+
+\begin{keyidea}[An honest note]
+This course gives you a strong, evidence-backed start: six shipped projects and the vocabulary top teams use. Offers come from what you keep building after it.
+\end{keyidea}
+
+\begin{submitbox}
+Deliverable \textbf{P6 --- Capstone in Production}: live URL, CI badge, \texttt{docs/audit.md}, model card, pitch deck and mock-interview feedback in \texttt{P6-capstone/}. Tag \texttt{sunday-6}, create a Release, submit the link.
+\end{submitbox}
+
+\end{document}

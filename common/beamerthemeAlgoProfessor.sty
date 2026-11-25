@@ -1,0 +1,107 @@
+%% =====================================================================
+%% beamerthemeAlgoProfessor.sty — AlgoProfessor AI Scientist slides
+%% Usage: \documentclass[aspectratio=169,11pt]{beamer} \usetheme{AlgoProfessor} \setsunday{1}
+%% =====================================================================
+\mode<presentation>
+\RequirePackage[T1]{fontenc}
+\RequirePackage{mathptmx}
+\RequirePackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,calc,shapes}
+\RequirePackage{booktabs,tabularx}
+\RequirePackage{listings}
+\RequirePackage[most]{tcolorbox}
+\usefonttheme{serif}
+\renewcommand{\sfdefault}{\rmdefault}
+\renewcommand{\ttdefault}{\rmdefault}
+\graphicspath{{../figures/}{../../assets/}{../../common/}}
+
+\definecolor{navy}{HTML}{0B1F3A}
+\definecolor{navylight}{HTML}{1F3B63}
+\definecolor{gold}{HTML}{C9A227}
+\definecolor{goldlight}{HTML}{F6EBC4}
+\definecolor{paper}{HTML}{FBF8EF}
+\definecolor{ink}{HTML}{16202E}
+\definecolor{saffron}{HTML}{FF9933}
+\definecolor{indgreen}{HTML}{138808}
+\definecolor{dataC}{HTML}{1E7B5A}
+\definecolor{skillC}{HTML}{6A3D9A}
+\definecolor{warnC}{HTML}{A4243B}
+\definecolor{codebg}{HTML}{F4F1E6}
+\definecolor{sunA}{HTML}{0F6E7A}\definecolor{sunB}{HTML}{A4243B}\definecolor{sunC}{HTML}{5B3A8E}
+\definecolor{sunD}{HTML}{2E7D32}\definecolor{sunE}{HTML}{C25E00}\definecolor{sunF}{HTML}{1F4E9C}
+\colorlet{sun}{sunA}
+\newcommand{\sundaynum}{1}
+\newcommand{\setsunday}[1]{\renewcommand{\sundaynum}{#1}%
+  \ifcase#1\or\colorlet{sun}{sunA}\or\colorlet{sun}{sunB}\or\colorlet{sun}{sunC}\or\colorlet{sun}{sunD}\or\colorlet{sun}{sunE}\or\colorlet{sun}{sunF}\fi
+  \setbeamercolor{frametitle}{fg=white,bg=sun}\setbeamercolor{structure}{fg=sun}
+  \setbeamercolor{block title}{fg=white,bg=sun}\setbeamercolor{block body}{bg=sun!6}
+  \setbeamercolor{itemize item}{fg=sun}\setbeamercolor{enumerate item}{fg=sun}}
+
+\setbeamercolor{normal text}{fg=ink,bg=paper}
+\setbeamercolor{alerted text}{fg=warnC}
+\setbeamercolor{block title alerted}{fg=white,bg=warnC}\setbeamercolor{block body alerted}{bg=warnC!6}
+\setbeamercolor{block title example}{fg=white,bg=dataC}\setbeamercolor{block body example}{bg=dataC!6}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize item}{\raisebox{0.2ex}{\tikz\fill[sun](0,0) rectangle (0.16,0.16);}}
+\setbeamertemplate{itemize subitem}{\color{gold}\textbullet}
+\setbeamertemplate{enumerate item}{\tikz[baseline=(n.base)]\node[fill=sun,text=white,circle,inner sep=1.2pt,font=\scriptsize\bfseries](n){\insertenumlabel};}
+\setbeamertemplate{blocks}[rounded][shadow=false]
+\setbeamerfont{frametitle}{size=\Large,series=\bfseries}
+\setbeamerfont{block title}{series=\bfseries}
+
+\setbeamertemplate{frametitle}{%
+  \nointerlineskip
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[sun] (current page.north west) rectangle ([yshift=-1.25cm]current page.north east);
+    \fill[gold] ([yshift=-1.25cm]current page.north west) rectangle ([yshift=-1.33cm]current page.north east);
+    \node[anchor=west,text=white,font=\Large\bfseries] at ([xshift=0.55cm,yshift=-0.62cm]current page.north west) {\insertframetitle};
+    \node[anchor=east,fill=white,rounded corners=3pt,inner sep=2pt] at ([xshift=-0.3cm,yshift=-0.62cm]current page.north east)
+      {\includegraphics[height=0.95cm]{logo_transparent.png}};
+  \end{tikzpicture}\vspace{1.05cm}}
+
+\setbeamertemplate{footline}{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[saffron] ([yshift=0.32cm]current page.south west) rectangle ([xshift=0.8cm,yshift=0.36cm]current page.south west);
+    \fill[navy] (current page.south west) rectangle ([yshift=0.32cm]current page.south east);
+    \node[anchor=west,text=goldlight,font=\scriptsize] at ([xshift=0.4cm,yshift=0.16cm]current page.south west) {AlgoProfessor $\cdot$ AI Scientist Hands-On};
+    \node[text=white,font=\scriptsize\bfseries] at ([yshift=0.16cm]current page.south) {Sunday \sundaynum};
+    \node[anchor=east,text=gold,font=\scriptsize] at ([xshift=-0.4cm,yshift=0.16cm]current page.south east) {\insertframenumber/\inserttotalframenumber};
+  \end{tikzpicture}}
+
+\setbeamertemplate{title page}{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[navy] (current page.north west) rectangle (current page.south east);
+    \fill[sun] (current page.north west) rectangle ([xshift=0.45cm]current page.south west);
+    \fill[saffron] ([yshift=-0.18cm]current page.north west) rectangle ([yshift=0cm]current page.north east);
+    \fill[indgreen] (current page.south west) rectangle ([yshift=0.18cm]current page.south east);
+    \node[anchor=north east,fill=white,rounded corners=5pt,inner sep=5pt] at ([xshift=-0.8cm,yshift=-0.7cm]current page.north east)
+      {\includegraphics[height=1.8cm]{logo_transparent.png}};
+    \node[anchor=north west,text=gold,font=\small\bfseries] (kick) at ([xshift=1.2cm,yshift=-1.2cm]current page.north west) {ALGOPROFESSOR $\cdot$ AI SCIENTIST HANDS-ON};
+    \node[anchor=north west,text=white,font=\LARGE\bfseries,text width=10.4cm,align=left,inner sep=0pt] (ttl) at ([yshift=-0.45cm]kick.south west) {\raggedright\hyphenpenalty=10000\inserttitle\par};
+    \node[anchor=north west,text=goldlight,font=\normalsize,text width=12.5cm,align=left,inner sep=0pt] at ([yshift=-0.4cm]ttl.south west) {\raggedright\hyphenpenalty=10000\insertsubtitle\par};
+    \node[anchor=south west,text=white,font=\small,align=left] at ([xshift=1.2cm,yshift=0.8cm]current page.south west) {\insertauthor\\[2pt]{\color{gold}\insertdate}};
+  \end{tikzpicture}}
+
+\newcommand{\teachtag}{\tikz[baseline=(t.base)]\node[fill=gold,text=navy,rounded corners=2pt,inner sep=2pt,font=\scriptsize\bfseries](t){TEACH};}
+\newcommand{\buildtag}{\tikz[baseline=(t.base)]\node[fill=navy,text=gold,rounded corners=2pt,inner sep=2pt,font=\scriptsize\bfseries](t){BUILD};}
+\newcommand{\ds}[1]{{\color{dataC}\bfseries #1}}
+\newcommand{\sk}[1]{{\color{skillC}#1}}
+\newcommand{\hourslide}[5]{% {hour}{TEACH/BUILD}{title}{dataset}{skills}
+  \begin{frame}[plain]
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[sun] (current page.north west) rectangle (current page.south east);
+    \fill[gold] ([yshift=1.5cm]current page.south west) rectangle ([yshift=1.58cm]current page.south east);
+    \node[anchor=north east,fill=white,rounded corners=4pt,inner sep=3pt] at ([xshift=-0.6cm,yshift=-0.5cm]current page.north east)
+      {\includegraphics[height=1.3cm]{logo_transparent.png}};
+    \node[anchor=west,text=goldlight,font=\Large\bfseries] at ([xshift=1cm,yshift=1.9cm]current page.west) {Hour #1 \quad\ifnum\pdfstrcmp{#2}{TEACH}=0 \teachtag\else\buildtag\fi};
+    \node[anchor=west,text=white,font=\huge\bfseries,text width=13cm,align=left] at ([xshift=1cm,yshift=0.6cm]current page.west) {\raggedright\hyphenpenalty=10000\exhyphenpenalty=10000 #3\par};
+    \node[anchor=north west,text=white,font=\normalsize,text width=13cm,align=left] at ([xshift=1cm,yshift=-0.6cm]current page.west)
+      {\textbf{Dataset:} #4\\[3pt]\textbf{Skills:} #5};
+  \end{tikzpicture}
+  \end{frame}}
+
+\lstdefinestyle{ap}{basicstyle=\footnotesize\rmfamily,backgroundcolor=\color{codebg},frame=leftline,framerule=2.5pt,rulecolor=\color{sun},
+  keywordstyle=\color{navy}\bfseries,commentstyle=\color{dataC}\itshape,stringstyle=\color{warnC},breaklines=true,
+  showstringspaces=false,columns=fullflexible,language=Python,upquote=true,xleftmargin=6pt,framexleftmargin=4pt}
+\lstset{style=ap}
+\mode<all>

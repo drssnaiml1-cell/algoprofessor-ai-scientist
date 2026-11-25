@@ -23,6 +23,7 @@
 ---
 
 ## Contents
+0. [Sunday-by-Sunday course materials](#-sunday-by-sunday-course-materials)
 1. [Course at a glance](#1-course-at-a-glance)
 2. [Programme fee](#2-programme-fee)
 3. [Sunday timetable](#3-sunday-timetable)
@@ -76,6 +77,25 @@ Same structure at every campus, in local time.
 | **by 18:00** | 🟧 **GIT** | **Mandatory GitHub submission** of the day's project |
 
 **Before Sunday 1:** Python basics (a 4-hour primer is sent on enrolment), a laptop with 16 GB RAM recommended, and GitHub, Hugging Face and Kaggle accounts. Tool stack: Python 3.11+, VS Code, Jupyter, Git, Docker.
+
+## 📚 Sunday-by-Sunday course materials
+
+Every Sunday has **student notes**, **Beamer slides** (PDF + LaTeX source) and a **Jupyter notebook that has already been run**, so you can read the real outputs before running it yourself.
+
+| Sunday | Topic | Notes | Slides | Notebook | Project |
+|---|---|---|---|---|---|
+| 🟢 1 | [Data & ML Foundations](sunday-01-data-ml/) | [PDF](sunday-01-data-ml/notes/S01_Notes.pdf) · [tex](sunday-01-data-ml/notes/S01_Notes.tex) | [PDF](sunday-01-data-ml/slides/S01_Slides.pdf) · [tex](sunday-01-data-ml/slides/S01_Slides.tex) | [ipynb](sunday-01-data-ml/notebooks/S01_Data_ML_Foundations.ipynb) · [Colab](https://colab.research.google.com/github/drssnaiml1-cell/algoprofessor-ai-scientist/blob/main/sunday-01-data-ml/notebooks/S01_Data_ML_Foundations.ipynb) | P1 Churn Intelligence |
+| 🔴 2 | [Deep Learning with PyTorch](sunday-02-deep-learning/) | [PDF](sunday-02-deep-learning/notes/S02_Notes.pdf) · [tex](sunday-02-deep-learning/notes/S02_Notes.tex) | [PDF](sunday-02-deep-learning/slides/S02_Slides.pdf) · [tex](sunday-02-deep-learning/slides/S02_Slides.tex) | [ipynb](sunday-02-deep-learning/notebooks/S02_Deep_Learning_PyTorch.ipynb) · [Colab](https://colab.research.google.com/github/drssnaiml1-cell/algoprofessor-ai-scientist/blob/main/sunday-02-deep-learning/notebooks/S02_Deep_Learning_PyTorch.ipynb) | P2 LeafDoctor |
+| 🟣 3 | [Transformers & LLM Engineering](sunday-03-transformers-llm/) | [PDF](sunday-03-transformers-llm/notes/S03_Notes.pdf) · [tex](sunday-03-transformers-llm/notes/S03_Notes.tex) | [PDF](sunday-03-transformers-llm/slides/S03_Slides.pdf) · [tex](sunday-03-transformers-llm/slides/S03_Slides.tex) | [ipynb](sunday-03-transformers-llm/notebooks/S03_Transformers_LLM_Engineering.ipynb) · [Colab](https://colab.research.google.com/github/drssnaiml1-cell/algoprofessor-ai-scientist/blob/main/sunday-03-transformers-llm/notebooks/S03_Transformers_LLM_Engineering.ipynb) | P3 MiniLLM |
+| 🟩 4 | [Embeddings, Retrieval & RAG](sunday-04-retrieval-rag/) | [PDF](sunday-04-retrieval-rag/notes/S04_Notes.pdf) · [tex](sunday-04-retrieval-rag/notes/S04_Notes.tex) | [PDF](sunday-04-retrieval-rag/slides/S04_Slides.pdf) · [tex](sunday-04-retrieval-rag/slides/S04_Slides.tex) | [ipynb](sunday-04-retrieval-rag/notebooks/S04_Retrieval_RAG.ipynb) · [Colab](https://colab.research.google.com/github/drssnaiml1-cell/algoprofessor-ai-scientist/blob/main/sunday-04-retrieval-rag/notebooks/S04_Retrieval_RAG.ipynb) | P4 PolicyGPT |
+| 🟠 5 | [Agentic AI Systems](sunday-05-agentic-ai/) | [PDF](sunday-05-agentic-ai/notes/S05_Notes.pdf) · [tex](sunday-05-agentic-ai/notes/S05_Notes.tex) | [PDF](sunday-05-agentic-ai/slides/S05_Slides.pdf) · [tex](sunday-05-agentic-ai/slides/S05_Slides.tex) | [ipynb](sunday-05-agentic-ai/notebooks/S05_Agentic_AI_Systems.ipynb) · [Colab](https://colab.research.google.com/github/drssnaiml1-cell/algoprofessor-ai-scientist/blob/main/sunday-05-agentic-ai/notebooks/S05_Agentic_AI_Systems.ipynb) | P5 ScholarAgent |
+| 🔵 6 | [Production, Responsible AI & Capstone](sunday-06-production-capstone/) | [PDF](sunday-06-production-capstone/notes/S06_Notes.pdf) · [tex](sunday-06-production-capstone/notes/S06_Notes.tex) | [PDF](sunday-06-production-capstone/slides/S06_Slides.pdf) · [tex](sunday-06-production-capstone/slides/S06_Slides.tex) | [ipynb](sunday-06-production-capstone/notebooks/S06_Production_Responsible_AI.ipynb) · [Colab](https://colab.research.google.com/github/drssnaiml1-cell/algoprofessor-ai-scientist/blob/main/sunday-06-production-capstone/notebooks/S06_Production_Responsible_AI.ipynb) | P6 Capstone |
+
+```bash
+pip install -r requirements.txt          # Python packages for all notebooks
+./build_materials.sh                      # rebuild every notes/slides PDF (TeX Live)
+```
+Datasets download automatically into `data/` the first time a notebook runs (UCI Adult, California Housing, IBM Telco, Fashion-MNIST, CIFAR-10, PlantVillage, Tiny Shakespeare, SST-2, TruthfulQA, GSM8K).
 
 ## 4. Hour-by-hour syllabus
 

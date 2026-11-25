@@ -1,0 +1,167 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\usetheme{AlgoProfessor}
+\setsunday{3}
+\usepackage{amsmath}
+%% ---- results from the executed notebook ----
+\newcommand{\rParams}{826,433}
+\newcommand{\rValEnd}{1.642}
+\newcommand{\rPplEnd}{5.16}
+\newcommand{\rTfidf}{0.810}
+\newcommand{\rEnc}{0.749}
+\newcommand{\rBase}{0.520}
+\newcommand{\rLora}{0.605}
+\newcommand{\rLoraParams}{65,536}
+\newcommand{\rLoraPct}{7.3}
+\newcommand{\rForgetBase}{1.642}
+\newcommand{\rForgetLora}{2.721}
+\title{Sunday 3: Transformers \& LLM Engineering}
+\subtitle{Hours 11--15 \;$\cdot$\; 2 h TEACH + 3 h BUILD \;$\cdot$\; Project P3 --- MiniLLM}
+\author{Dr S Satyanarayana Ph.D., PDF(AI), FARSC \;$\cdot$\; Founder \& CEO, AlgoProfessor}
+\date{AI Scientist Hands-On \;$\cdot$\; Sunday Edition}
+\begin{document}
+\begin{frame}[plain]\titlepage\end{frame}
+
+\begin{frame}{Today at a glance}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{c c X l}
+\toprule
+\textbf{Hour} & \textbf{Mode} & \textbf{Focus} & \textbf{Dataset}\\
+\midrule
+11 & \teachtag & Attention, BPE, a mini-GPT from scratch & \ds{Tiny Shakespeare}\\
+12 & \teachtag & Fine-tuning encoders & \ds{SST-2}\\
+13 & \buildtag & LoRA instruction-tuning, from scratch & \ds{SST-2 instructions}\\
+14 & \buildtag & Evaluation, forgetting, contamination & \ds{SST-2 test}\\
+15 & \buildtag & Sampling, JSON output, throughput & \ds{Prompt suite}\\
+\bottomrule
+\end{tabularx}
+\vspace{6pt}
+\begin{block}{By 18:00 today}
+P3 --- MiniLLM on GitHub, tagged \texttt{sunday-3}.
+\end{block}
+\end{frame}
+
+\hourslide{11}{TEACH}{Self-attention, tokenisation and a mini-GPT}{Tiny Shakespeare (1.1 M characters)}{Attention maths, tokenisers, GPT internals}
+
+\begin{frame}{Attention in one equation}
+\[
+\mathrm{Attention}(Q,K,V)=\mathrm{softmax}\!\Big(\frac{QK^{\top}}{\sqrt{d_k}}+M\Big)V
+\]
+\begin{columns}[T]
+\column{0.48\textwidth}
+\begin{itemize}
+\item $Q$: what I am looking for
+\item $K$: what I contain
+\item $V$: what I pass on
+\item $M$: causal mask, $-\infty$ above the diagonal
+\end{itemize}
+\column{0.48\textwidth}
+\begin{block}{BPE tokenisation}
+Merge the most frequent pair, repeat. First merges on Shakespeare: \texttt{e</w>}, \texttt{s</w>}, \texttt{th}, \ldots, \texttt{the</w>}
+\end{block}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{MiniGPT: \rParams{} parameters}
+\begin{columns}[c]
+\column{0.48\textwidth}
+\begin{lstlisting}
+x = x + Attention(LayerNorm(x))
+x = x + MLP(LayerNorm(x))
+\end{lstlisting}
+4 blocks $\cdot$ 4 heads $\cdot$ 128 dims $\cdot$ 128-character context
+\begin{exampleblock}{Our run}
+Validation loss $\rightarrow$ \textbf{\rValEnd} nats/char\\ perplexity \textbf{\rPplEnd} (random: 65)
+\end{exampleblock}
+\column{0.5\textwidth}\centering\includegraphics[width=\linewidth]{s3_gpt_loss.png}
+\end{columns}
+\end{frame}
+
+\hourslide{12}{TEACH}{Fine-tuning an encoder for sentiment}{SST-2 (6,920 train / 1,821 test)}{Transformer encoders, fine-tuning}
+
+\begin{frame}{Always beat a simple baseline first}
+\begin{columns}[T]
+\column{0.48\textwidth}
+\begin{exampleblock}{SST-2 test accuracy}
+TF-IDF + logistic regression: \textbf{\rTfidf}\\
+Transformer encoder from scratch: \rEnc
+\end{exampleblock}
+\column{0.48\textwidth}
+\begin{block}{Why?}
+Transformers win through \textbf{pretraining}. A pretrained DistilBERT fine-tuned for 2 epochs typically reaches $\approx$0.91 --- run it in class on a GPU.
+\end{block}
+\end{columns}
+\end{frame}
+
+\hourslide{13}{BUILD}{MiniLLM: LoRA instruction-tuning from scratch}{SST-2 reviews in an instruction template}{PEFT, LoRA, chat templates, memory budgeting}
+
+\begin{frame}[fragile]{LoRA: train a tiny update, freeze the rest}
+\[ h = Wx + \tfrac{\alpha}{r}\,BAx,\qquad r\ll\min(d,k),\quad B_0=0 \]
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{lstlisting}
+### Review:
+a stirring , funny and finally ...
+### Sentiment: positive
+\end{lstlisting}
+Loss on the \textbf{answer tokens only}.
+\column{0.46\textwidth}
+\begin{exampleblock}{Our run}
+Trainable: \rLoraParams{} (\rLoraPct\%)\\
+0.5 B model: full fine-tune $\approx$ 8 GB vs LoRA $\approx$ 1 GB + adapters
+\end{exampleblock}
+\begin{alertblock}{First attempt failed}
+Whole-text loss $\Rightarrow$ 48\%, all ``negative''. Mask the prompt!
+\end{alertblock}
+\end{columns}
+\end{frame}
+
+\hourslide{14}{BUILD}{Evaluate it properly}{SST-2 test (held out) + Shakespeare validation}{LLM evaluation, benchmark hygiene, contamination}
+
+\begin{frame}{Read the table honestly}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{lr}
+\toprule
+System & SST-2 acc\\
+\midrule
+Base MiniGPT, zero-shot & \rBase\\
+MiniGPT + LoRA (ours) & \rLora\\
+Encoder from scratch & \rEnc\\
+TF-IDF + logistic & \textbf{\rTfidf}\\
+\bottomrule
+\end{tabular}\\[6pt]
+\small Shakespeare val loss: \rForgetBase{} $\rightarrow$ \rForgetLora{} with adapter on
+\column{0.44\textwidth}
+\begin{block}{Hygiene checklist}
+Untouched test set $\cdot$ overlap check (0.3\%) $\cdot$ simple baseline $\cdot$ fixed prompts $\cdot$ several seeds
+\end{block}
+\begin{block}{Takeaway}
+LoRA works --- above chance with 7\% of weights --- but a small model stays small. Switch the adapter off to recover the base.
+\end{block}
+\end{columns}
+\end{frame}
+
+\hourslide{15}{BUILD}{Serving: sampling, structured output, cost}{Team prompt suite}{Inference serving, structured outputs, latency/cost}
+
+\begin{frame}[fragile]{Serve it safely}
+\begin{columns}[T]
+\column{0.5\textwidth}
+Temperature: $p_i\propto e^{z_i/T}$ \quad top-$k$ sampling
+\begin{lstlisting}
+{"review": "one of the best movies of the year",
+ "sentiment": "positive", "confidence": 0.51}
+\end{lstlisting}
+\begin{alertblock}{Confidence $\neq$ correctness}
+Our model says ``positive'' even for ``a dull, lifeless and forgettable film''.
+\end{alertblock}
+\column{0.46\textwidth}
+\begin{block}{Throughput}
+Batching raises tokens/second far more than latency --- the idea behind vLLM.
+\end{block}
+\begin{block}{Submit by 18:00 --- P3}
+Notebook $\cdot$ LoRA adapter $\cdot$ eval table $\cdot$ JSON demo $\rightarrow$ tag \texttt{sunday-3}
+\end{block}
+\end{columns}
+\end{frame}
+\end{document}
