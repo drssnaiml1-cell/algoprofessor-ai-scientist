@@ -286,9 +286,9 @@ git push origin sunday-2
 ---
 
 ### Course Director
-**Dr S Satyanarayana Ph.D., PDF(AI), FARSC**
-International Postdoctoral Research Co-Supervisor · NYUST (YunTech) & NKUST, Taiwan
-Agentic AI Scientist · Founder & CEO, AlgoProfessor · Creator of AlgoLang
+**Dr S Satyanarayana Ph.D., PDF(AI), FARSC**  
+Founder, CEO & Chief Agentic AI Scientist · AlgoProfessor AI R&D Solutions, Hyderabad  
+Creator of AlgoLang
 
 ### Build the syllabus PDF
 ```bash
