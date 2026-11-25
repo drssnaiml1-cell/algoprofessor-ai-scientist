@@ -60,7 +60,7 @@
 %% ---------------- Headings ----------------
 \titleformat{\section}{\sffamily\Large\bfseries\color{navy}}{\thesection}{0.6em}{}[{\color{gold}\titlerule[1.2pt]}]
 \titleformat{\subsection}{\sffamily\large\bfseries\color{navylight}}{\thesubsection}{0.5em}{}
-\titlespacing*{\section}{0pt}{14pt}{8pt}
+\titlespacing*{\section}{0pt}{10pt}{5pt}
 
 %% ---------------- Header / footer ----------------
 \pagestyle{fancy}
@@ -82,7 +82,7 @@
 \renewcommand{\arraystretch}{1.35}
 
 \newtcolorbox{sundaybox}[3]{enhanced,colback=white,colframe=#1,
-  boxrule=0.9pt,arc=3pt,left=6pt,right=6pt,top=6pt,bottom=6pt,
+  boxrule=0.9pt,arc=3pt,left=5pt,right=5pt,top=4pt,bottom=4pt,
   title={\sffamily\bfseries\large #2\quad\normalsize\color{gold}$\cdot$\quad #3},
   coltitle=white,colbacktitle=#1,attach boxed title to top left={yshift=-1mm},
   boxed title style={sharp corners,boxrule=0pt},fonttitle=\sffamily}
@@ -96,7 +96,7 @@
 
 %% Sunday hour table
 \newenvironment{hourtable}[1]{%
-  \small
+  \footnotesize\renewcommand{\arraystretch}{1.06}\setlength{\tabcolsep}{4pt}%
   \rowcolors{2}{#1!6}{white}
   \tabularx{\linewidth}{@{}>{\centering\arraybackslash}p{0.55cm} >{\centering\arraybackslash}p{1.15cm} Y L{3.5cm} L{3.6cm}@{}}
   \rowcolor{#1}\color{white}\sffamily\bfseries Hr & \color{white}\sffamily\bfseries Mode &
@@ -207,7 +207,7 @@ Certificate & \emph{AlgoProfessor Certified AI Scientist --- Hands-On (Level 1)}
 \captionof{figure}{Programme architecture. Each Sunday ends in one portfolio project (P1--P6); together they lead to Demo Day and the job market.}
 \end{center}
 
-\newpage
+\penalty-200
 \begin{center}
 \begin{tikzpicture}[x=2.55cm,y=1cm,font=\footnotesize]
   \foreach \a/\b/\c/\t in {0/1/teach/Hour 1\\Teach,1/2/teach/Hour 2\\Teach,2/2.25/gray!25/,2.25/3.25/work/Hour 3\\Build,
@@ -256,12 +256,12 @@ Certificate & \emph{AlgoProfessor Certified AI Scientist --- Hands-On (Level 1)}
 \end{itemize}
 
 %% ======================= 2. SUNDAYS =======================
-\newpage
-\section{Hour-by-Hour Syllabus}
+\penalty-200
+\section{Hour-by-Hour Syllabus}\enlargethispage{2.5\baselineskip}
 
 %% ---------- SUNDAY 1 ----------
 \begin{sundaybox}{sunA}{Sunday 1 --- Data \& Machine Learning Foundations}{Hours 1--5}
-\textbf{Goal:} think like a data scientist. Frame a business problem, clean data, build and explain a model, track experiments.\par\smallskip
+\textbf{Goal:} think like a data scientist --- frame a business problem, clean data, build and explain a model, track experiments.\par\smallskip
 \begin{hourtable}{sunA}
 1 & \teachtag & Scientific Python: NumPy vectorisation, Pandas, exploratory data analysis, missing values, outliers, visual EDA. &
   \ds{UCI Adult Income} (48,842 rows, 14 features) & \sk{NumPy, Pandas, Matplotlib/Seaborn, data cleaning, EDA reasoning}\\
@@ -277,7 +277,7 @@ Certificate & \emph{AlgoProfessor Certified AI Scientist --- Hands-On (Level 1)}
 \begin{goldnote}\textbf{Deliverable P1:} \emph{Churn Intelligence} --- GitHub repo with notebook, MLflow logs, SHAP report and a one-page business summary.\\[2pt]{\color{saffron!80!black}\bfseries GitHub deadline: 18:00 local time, Sunday 1} --- push, tag \texttt{sunday-1}, submit the release link.\\[2pt]{\color{navy}\bfseries Mon--Sat homework:} \emph{Credit Default Risk Scorer} --- one task per day, Release \texttt{week-1} by Saturday 23:59 (Section~\ref{sec:homework}).\end{goldnote}
 \end{sundaybox}
 
-\vspace{6pt}
+\vspace{2pt}
 %\newpage
 % ---------- SUNDAY 2 ----------
 \begin{sundaybox}{sunB}{Sunday 2 --- Deep Learning with PyTorch}{Hours 6--10}
@@ -316,7 +316,7 @@ Certificate & \emph{AlgoProfessor Certified AI Scientist --- Hands-On (Level 1)}
 \begin{goldnote}\textbf{Deliverable P3:} \emph{MiniLLM} --- LoRA adapter on Hugging Face Hub, evaluation report, live inference endpoint.\\[2pt]{\color{saffron!80!black}\bfseries GitHub deadline: 18:00 local time, Sunday 3} --- push, tag \texttt{sunday-3}, submit the release link.\\[2pt]{\color{navy}\bfseries Mon--Sat homework:} \emph{Domain Instruction-Tuned LLM} --- one task per day, Release \texttt{week-3} by Saturday 23:59 (Section~\ref{sec:homework}).\end{goldnote}
 \end{sundaybox}
 
-\vspace{6pt}
+\vspace{2pt}
 %\newpage
 % ---------- SUNDAY 4 ----------
 \begin{sundaybox}{sunD}{Sunday 4 --- Embeddings, Retrieval \& RAG}{Hours 16--20}
@@ -355,7 +355,7 @@ Certificate & \emph{AlgoProfessor Certified AI Scientist --- Hands-On (Level 1)}
 \begin{goldnote}\textbf{Deliverable P5:} \emph{ScholarAgent} --- multi-agent research assistant with trace logs and an evaluation table.\\[2pt]{\color{saffron!80!black}\bfseries GitHub deadline: 18:00 local time, Sunday 5} --- push, tag \texttt{sunday-5}, submit the release link.\\[2pt]{\color{navy}\bfseries Mon--Sat homework:} \emph{Research Analyst Agent} --- one task per day, Release \texttt{week-5} by Saturday 23:59 (Section~\ref{sec:homework}).\end{goldnote}
 \end{sundaybox}
 
-\vspace{6pt}
+\vspace{2pt}
 %\newpage
 % ---------- SUNDAY 6 ----------
 \begin{sundaybox}{sunF}{Sunday 6 --- Production, Responsible AI \& Capstone Demo Day}{Hours 26--30}
@@ -376,11 +376,11 @@ Certificate & \emph{AlgoProfessor Certified AI Scientist --- Hands-On (Level 1)}
 \end{sundaybox}
 
 %% ======================= WEEKLY HOMEWORK =======================
-\newpage
+\penalty-200
 \input{homework_section}
 
 %% ======================= 3. DATASET REGISTER =======================
-\newpage
+\penalty-200
 \section{Dataset Register (30 Hours)}
 \small
 \rowcolors{2}{goldlight!60}{white}
@@ -413,7 +413,7 @@ Certificate & \emph{AlgoProfessor Certified AI Scientist --- Hands-On (Level 1)}
 \normalsize
 \begin{goldnote}All datasets are public or built in class. Learners check each licence before commercial use. Gated datasets (e.g.\ GAIA) need a free Hugging Face access request, made during the pre-course week.\end{goldnote}
 
-\newpage
+\penalty-200
 %% ======================= 4. SKILLS MATRIX =======================
 \section{Skill Set After Completion}
 \small
@@ -434,7 +434,7 @@ Communication & Pitch to founders, defend design choices, present to non-technic
 
 
 %% ======================= 4b. DETAILED SKILLS =======================
-\newpage
+\penalty-200
 \section{Detailed Skill Set: 90+ Skills You Will Use Hands-On}
 Every skill below is practised in a real hour of the course, not only explained. Hour numbers show where.
 
@@ -478,7 +478,7 @@ Every skill below is practised in a real hour of the course, not only explained.
 \end{center}
 
 %% ======================= 4c. JOBS =======================
-\newpage
+\penalty-200
 \section{Jobs You Can Target After This Course}
 Each role below lists what the job involves and which course projects give you evidence for it. Entry-level and junior roles are the realistic first target. Senior roles follow with experience.
 
@@ -557,7 +557,7 @@ Career Lab mock interview & 10\%\\
 \end{itemize}
 
 %% ======================= 6. ROADMAP 2026-2035 =======================
-\newpage
+\penalty-200
 \section{AI Skill Roadmap 2026 -- 2035}
 This roadmap shows where AI skills are likely to move over the next decade, and which parts of this course carry forward. Later periods are projections from current research trends, not certainties. Each wave builds on the skills before it.
 
@@ -638,7 +638,7 @@ Start-up readiness & Ship fast, talk to users, pitch clearly & Hrs 29--30\\
 
 
 %% ======================= GITHUB SUBMISSION POLICY =======================
-\newpage
+\penalty-200
 \section{GitHub Submission Policy: 18:00 Every Sunday}
 \begin{navynote}
 \textbf{\color{gold}Rule.} Every learner submits that Sunday's project on GitHub \textbf{by 18:00 local time on the same Sunday} (IST in Hyderabad and Shirdi; local time in the USA and Canada). The teaching day ends at 15:00. The three hours until 18:00 are for clean-up, documentation and pushing. Work not submitted correctly by 18:00 is graded as late.

@@ -1,0 +1,381 @@
+%% AlgoProfessor AI Scientist --- course introduction deck (dynamic Beamer: overlays + transitions)
+%% Build: cd course-intro && TEXINPUTS=../common//: pdflatex AlgoProfessor_AI_Scientist_Course_Intro.tex  (run twice)
+\documentclass[aspectratio=169,11pt,xcolor=table]{beamer}
+\usetheme{AlgoProfessor}
+\graphicspath{{../assets/}{../common/}}
+\colorlet{sun}{navy}
+\setbeamercolor{frametitle}{fg=white,bg=navy}\setbeamercolor{structure}{fg=navy}
+\setbeamercolor{block title}{fg=gold,bg=navy}\setbeamercolor{block body}{bg=navy!5}
+\setbeamercolor{itemize item}{fg=gold}\setbeamercolor{enumerate item}{fg=navy}
+\usetikzlibrary{shadows}
+
+%% footer for this deck
+\setbeamertemplate{footline}{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[saffron] ([yshift=0.32cm]current page.south west) rectangle ([xshift=0.8cm,yshift=0.36cm]current page.south west);
+    \fill[indgreen] ([xshift=0.8cm,yshift=0.32cm]current page.south west) rectangle ([xshift=1.6cm,yshift=0.36cm]current page.south west);
+    \fill[navy] (current page.south west) rectangle ([yshift=0.32cm]current page.south east);
+    \node[anchor=west,text=goldlight,font=\scriptsize] at ([xshift=0.4cm,yshift=0.16cm]current page.south west) {AlgoProfessor $\cdot$ AI Scientist Hands-On};
+    \node[text=white,font=\scriptsize\bfseries] at ([yshift=0.16cm]current page.south) {Course Introduction};
+    \node[anchor=east,text=gold,font=\scriptsize] at ([xshift=-0.4cm,yshift=0.16cm]current page.south east) {\insertframenumber/\inserttotalframenumber};
+  \end{tikzpicture}}
+
+%% helpers
+\newcommand{\bignum}[4]{% overlay, number, colour, caption
+  \visible<#1>{\begin{tikzpicture}
+    \node[fill=#3,rounded corners=6pt,minimum width=3.3cm,minimum height=3.6cm,drop shadow] (b) {};
+    \node[text=white,font=\fontsize{30}{32}\selectfont\bfseries] at ([yshift=0.75cm]b.center) {#2};
+    \node[text=white,font=\scriptsize,text width=2.95cm,align=center] at ([yshift=-0.55cm]b.center) {#4};
+  \end{tikzpicture}}}
+\newcommand{\sectionslide}[3]{% kicker, title, subtitle
+  \begin{frame}[plain]\transfade
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[navy] (current page.north west) rectangle (current page.south east);
+    \fill[gold] ([yshift=-0.9cm]current page.west) rectangle ([xshift=4cm,yshift=-0.98cm]current page.west);
+    \node[anchor=south west,text=gold,font=\large\bfseries] at ([xshift=1cm,yshift=1.1cm]current page.west) {#1};
+    \node[anchor=west,text=white,font=\fontsize{30}{34}\selectfont\bfseries] at ([xshift=1cm,yshift=0.2cm]current page.west) {#2};
+    \node[anchor=north west,text=goldlight,font=\large,text width=12cm] at ([xshift=1cm,yshift=-1.25cm]current page.west) {#3};
+    \node[anchor=north east,fill=white,rounded corners=4pt,inner sep=3pt] at ([xshift=-0.6cm,yshift=-0.5cm]current page.north east) {\includegraphics[height=1.3cm]{logo_transparent.png}};
+  \end{tikzpicture}
+  \end{frame}}
+
+\newcommand{\sund}[5]{% colour, title, project, what, result
+  \begin{tcolorbox}[enhanced,colback=#1!6,colframe=#1,colbacktitle=#1,coltitle=white,arc=4pt,boxrule=1pt,
+     title={\large\bfseries #2 \hfill\normalsize #3},height=5.4cm]
+  \begin{columns}[T]\column{0.5\textwidth}\small\textbf{What you do}\par\smallskip #4
+  \column{0.46\textwidth}\begin{bres}[Our real result]\small #5\end{bres}\end{columns}
+  \end{tcolorbox}}
+
+\title{Why become an AI Scientist --- and why now}
+\subtitle{AlgoProfessor AI Scientist Hands-On \;$\cdot$\; 6 Sundays $\times$ 5 hours \;$\cdot$\; 12 real projects \;$\cdot$\; Hyderabad $\cdot$ Shirdi $\cdot$ USA $\cdot$ Canada}
+\author{Dr S Satyanarayana Ph.D., PDF(AI), FARSC \;$\cdot$\; Founder \& CEO, AlgoProfessor}
+\date{Course Introduction \;$\cdot$\; 2026 Batch}
+
+\begin{document}
+\begin{frame}[plain]\transfade\titlepage\end{frame}
+
+%% =====================================================================
+%% 1. IMPORTANCE
+%% =====================================================================
+\sectionslide{PART 1}{Why this course matters}{AI has moved from research labs into every product, team and job description.}
+
+\begin{frame}{AI is now how work gets done}
+\transwipe[direction=0]
+\begin{tikzpicture}[card/.style={rounded corners=5pt,text width=3.95cm,minimum height=4.4cm,align=left,inner sep=7pt,anchor=north west,drop shadow}]
+  \visible<1->{\node[card,fill=sunA!10,draw=sunA,line width=1pt] (a) at (0,0) {%
+     {\color{sunA}\Large\bfseries 1\quad Every product}\\[4pt]\small
+     Search, banking, farming, health, education and government services now ship AI features. Someone has to \textbf{build} them.};}
+  \visible<2->{\node[card,fill=sunB!8,draw=sunB,line width=1pt] (b) at (4.7,0) {%
+     {\color{sunB}\Large\bfseries 2\quad Builders win}\\[4pt]\small
+     Employers no longer ask \emph{``Do you know AI?''} They ask \emph{``Show me what you built, how you tested it, and where it fails.''}};}
+  \visible<3->{\node[card,fill=sunE!9,draw=sunE,line width=1pt] (c) at (9.4,0) {%
+     {\color{sunE}\Large\bfseries 3\quad The gap is skill}\\[4pt]\small
+     Tools are free and powerful. What is scarce is people who can turn data and models into \textbf{reliable, responsible} systems.};}
+  \visible<4->{\node[fill=navy,text=white,rounded corners=4pt,text width=13.4cm,align=center,inner sep=6pt,anchor=north west] at (0,-4.75)
+     {\color{gold}\bfseries This course turns you from an AI \emph{user} into an AI \emph{builder} --- in 30 hands-on hours.};}
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{The evidence: demand is real, and the talent is short}
+\transfade
+\centering
+\bignum{1-}{86\%}{sunA}{of employers expect AI and information processing to transform their business by 2030 \\[2pt]{\tiny(WEF Future of Jobs 2025)}}\hfill
+\bignum{2-}{Top 3}{sunB}{AI \& ML specialists are among the three fastest-growing jobs \\[2pt]{\tiny(WEF Future of Jobs 2025)}}\hfill
+\bignum{3-}{1 in 10}{sunC}{only one qualified engineer for every ten open GenAI roles in India \\[2pt]{\tiny(TeamLease Digital, 2025)}}\hfill
+\bignum{4-}{1.25M}{sunD}{AI professionals India is projected to need by 2027, about double 2022 \\[2pt]{\tiny(Deloitte--nasscom)}}
+\par\vspace{8pt}
+\visible<5->{\begin{tcolorbox}[colback=goldlight,colframe=gold,arc=3pt,boxrule=0.8pt,left=6pt,right=6pt,top=3pt,bottom=3pt]
+\small\textbf{What it means for you:} the shortage is not of people who have \emph{heard} of AI --- it is of people who can \textbf{build, evaluate and ship} it. That is exactly what we practise every Sunday.
+\end{tcolorbox}}
+\end{frame}
+
+\begin{frame}{The real gap: knowing versus shipping}
+\transwipe[direction=90]
+\begin{tikzpicture}[l/.style={anchor=north west,text width=4.1cm,font=\small,inner sep=5pt,minimum height=0.95cm},
+                    rr/.style={anchor=north west,text width=9.2cm,font=\small,inner sep=5pt,minimum height=0.95cm}]
+  \node[fill=navy,text=white,font=\bfseries,anchor=north west,text width=4.1cm,inner sep=5pt] at (0,0) {Most AI courses};
+  \node[fill=navy,text=gold,font=\bfseries,anchor=north west,text width=9.2cm,inner sep=5pt] at (4.6,0) {AlgoProfessor AI Scientist Hands-On};
+  \foreach \k/\L/\R in {
+    2/{Slides and theory, code at the end}/{\textbf{Code every hour} --- 2 h teach, 3 h build, every Sunday},
+    3/{Toy datasets}/{\textbf{A real dataset every hour} --- census, telecom, crops, Shakespeare, TruthfulQA, GSM8K},
+    4/{One final project}/{\textbf{6 Sunday projects + 6 Monday--Saturday homework projects}},
+    5/{Report the accuracy}/{\textbf{Honest evaluation} --- baselines, leakage checks, robustness, fairness, red-teaming},
+    6/{A certificate}/{\textbf{A public GitHub portfolio}, a deployed capstone, a Demo Day pitch and a mock interview}}{
+    \pgfmathsetmacro{\yy}{-0.75-1.05*(\k-2)}
+    \visible<\k->{
+      \node[l,fill=warnC!6,text=ink!80] at (0,\yy) {\L};
+      \node[rr,fill=dataC!8] at (4.6,\yy) {\R};
+      \draw[-Stealth,line width=1.2pt,gold] (4.2,\yy-0.45) -- (4.55,\yy-0.45);}}
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Our promise --- and an honest note}
+\transfade
+\begin{columns}[T]
+\column{0.56\textwidth}
+\begin{block}{By the end of Sunday 6 you will have}
+\begin{itemize}
+\item<2-> written training loops, attention and agents \textbf{yourself}
+\item<3-> shipped \textbf{12 projects} on real data, each with a README
+\item<4-> deployed a capstone with tests, monitoring and an audit
+\item<5-> pitched it on Demo Day and sat a mock interview
+\end{itemize}
+\end{block}
+\column{0.4\textwidth}
+\visible<6->{\begin{tcolorbox}[colback=warnC!5,colframe=warnC,colbacktitle=warnC,title=\bfseries Honest note,arc=3pt,boxrule=0.8pt,fontupper=\small]
+Thirty hours give you a strong, portfolio-backed start. Offers from top AI companies also depend on the practice you keep doing afterwards --- the 90-day plan is there for that. We mentor and refer where we can; we do not guarantee placement.
+\end{tcolorbox}}
+\end{columns}
+\end{frame}
+
+%% =====================================================================
+%% 2. HOW IT WORKS
+%% =====================================================================
+\sectionslide{PART 2}{How the course works}{Sundays to learn and build. Weekdays to apply it to a harder, real problem.}
+
+\begin{frame}{One Sunday, five hours}
+\transwipe[direction=0]
+\centering
+\begin{tikzpicture}[x=1.3cm,y=1cm,seg/.style={minimum height=1.3cm,anchor=south west,inner sep=0pt,font=\small\bfseries,align=center}]
+  \draw[navy!40,line width=1pt] (0,-0.15) -- (9.6,-0.15);
+  \foreach \t/\x in {09:00/0,10:00/1,11:15/2.25,12:15/3.25,13:00/4,14:00/5,15:00/6,18:00/9.6}{
+    \draw[navy!40] (\x,-0.25) -- (\x,-0.05); \node[font=\scriptsize,text=navy] at (\x,-0.5) {\t};}
+  \visible<1->{\node[seg,fill=gold,text=navy,minimum width=1.3cm] at (0,0) {Hour 1\\TEACH};}
+  \visible<2->{\node[seg,fill=gold,text=navy,minimum width=1.3cm] at (1,0) {Hour 2\\TEACH};}
+  \visible<3->{\node[seg,fill=navy!25,text=navy,minimum width=0.32cm] at (2,0) {\rotatebox{90}{\tiny tea}};
+               \node[seg,fill=navy,text=gold,minimum width=1.3cm] at (2.25,0) {Hour 3\\BUILD};
+               \node[seg,fill=navy!25,text=navy,minimum width=0.97cm] at (3.25,0) {Lunch};
+               \node[seg,fill=navy,text=gold,minimum width=1.3cm] at (4,0) {Hour 4\\BUILD};
+               \node[seg,fill=navy,text=gold,minimum width=1.3cm] at (5,0) {Hour 5\\BUILD};}
+  \visible<4->{\node[seg,fill=saffron!25,draw=saffron,text=navy,minimum width=4.68cm,font=\small] at (6,0) {Polish, document, push to GitHub};
+               \node[fill=warnC,text=white,rounded corners=3pt,font=\small\bfseries] at (9.6,2) {18:00 submit};
+               \draw[-{Stealth},warnC,line width=1pt] (9.6,1.7) -- (9.6,1.35);}
+\end{tikzpicture}
+\par\vspace{10pt}
+\begin{columns}[T]
+\column{0.31\textwidth}\uncover<1->{\begin{bdef}[TEACH (2 h)]Concept, maths and live coding on a real dataset.\end{bdef}}
+\column{0.31\textwidth}\uncover<3->{\begin{balgo}[BUILD (3 h)]Your team builds the day's project with mentors (1 per 10).\end{balgo}}
+\column{0.31\textwidth}\uncover<4->{\begin{bwarn}[18:00 rule]Tag \texttt{sunday-N}, create a Release, submit the link.\end{bwarn}}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Six Sundays, one journey}
+\transfade
+\centering
+\begin{tikzpicture}[sn/.style={rounded corners=5pt,minimum width=1.9cm,minimum height=1.55cm,text width=1.75cm,text=white,align=center,font=\small\bfseries,drop shadow},
+  pj/.style={rounded corners=3pt,font=\scriptsize\bfseries,inner sep=3pt,draw,fill=white},
+  ar/.style={-Stealth,line width=1.6pt,draw=gold}]
+  \foreach \i/\c/\t/\p [count=\k] in {1/sunA/Data \& ML/P1 Churn,2/sunB/Deep Learning/P2 LeafDoctor,3/sunC/Transformers \& LLMs/P3 MiniLLM,
+      4/sunD/Retrieval \& RAG/P4 PolicyGPT,5/sunE/Agentic AI/P5 ScholarAgent,6/sunF/Production \& Capstone/P6 Capstone}{
+    \visible<\k->{\node[sn,fill=\c] (s\i) at (2.3*\i,0) {Sunday \i\par{\normalfont\scriptsize\t}};
+                  \node[pj,draw=\c,text=\c,below=4pt of s\i] {\p};}}
+  \foreach \i/\j [count=\k from 2] in {1/2,2/3,3/4,4/5,5/6}{\visible<\k->{\draw[ar] (s\i) -- (s\j);}}
+  \visible<7->{\node[fill=gold,text=navy,rounded corners=5pt,font=\bfseries,inner sep=7pt,drop shadow] (d) at (8.05,-2.75) {Demo Day $\rightarrow$ portfolio $\rightarrow$ interviews};
+               \draw[-Stealth,line width=1.6pt,navy] (s6.south) |- (d.east);}
+\end{tikzpicture}
+\par\vspace{6pt}
+\uncover<7->{\small Each Sunday builds on the last: from a spreadsheet of customers to a deployed, monitored, audited AI system.}
+\end{frame}
+
+\begin{frame}{What you build --- with real results from our notebooks}
+\transfade
+\begin{tikzpicture}[tab/.style={rounded corners=3pt,minimum width=2.15cm,minimum height=0.6cm,font=\scriptsize\bfseries}]
+  \foreach \i/\c in {1/sunA,2/sunB,3/sunC,4/sunD,5/sunE,6/sunF}{
+    \node[tab,fill=\c!20,text=\c] at (2.35*\i,0) {Sunday \i};
+    \node<\i>[tab,fill=\c,text=white] at (2.35*\i,0) {Sunday \i};}
+\end{tikzpicture}\par\vspace{6pt}
+
+\only<1>{\sund{sunA}{Data \& ML Foundations}{P1 --- Churn Intelligence}{EDA on 48,842 census records, regression on 20,640 districts, a churn model on 7,043 telecom customers, Optuna tuning, SHAP explanations, MLflow tracking.}{Gradient boosting beats the baseline on ROC-AUC, and SHAP shows \emph{why} each customer is at risk --- in plain language a manager can act on.}}
+\only<2>{\sund{sunB}{Deep Learning with PyTorch}{P2 --- LeafDoctor}{Training loops from scratch, CNNs, a leakage-free image pipeline, a Vision Transformer, Grad-CAM, INT8 quantisation and ONNX export.}{CNN \textbf{98.7\%} on clean leaves --- but \textbf{20\%} under sensor noise, where the ViT held \textbf{92\%}. Lab accuracy is not field accuracy.}}
+\only<3>{\sund{sunC}{Transformers \& LLM Engineering}{P3 --- MiniLLM}{Build an 826k-parameter GPT from scratch, tokenisation, attention, LoRA instruction tuning, honest evaluation, structured JSON serving.}{Perplexity \textbf{5.16} vs 65 for guessing. LoRA trains only \textbf{7.3\%} of weights --- and a TF-IDF baseline still wins: always check.}}
+\only<4>{\sund{sunD}{Retrieval \& RAG Systems}{P4 --- PolicyGPT}{Embeddings, FAISS indexes, BM25 + dense hybrid search, chunking a real PDF, cited answers that say ``not found'' when they should.}{Hybrid search lifts R@1 from \textbf{0.377} to \textbf{0.462}; PolicyGPT retrieves the right page \textbf{95\%} of the time and never refuses an answerable question.}}
+\only<5>{\sund{sunE}{Agentic AI Systems}{P5 --- ScholarAgent}{Tool calling, the ReAct loop, a reasoning critic on 1,319 GSM8K problems, research tools with memory, a code sandbox and human approval.}{\textbf{7/12} tasks solved at under 1 cent each; unsafe code refused; every email held as \texttt{PENDING\_APPROVAL} for a human.}}
+\only<6>{\sund{sunF}{Production, Responsible AI \& Capstone}{P6 --- Capstone}{Model registry, tests, FastAPI + Docker, drift monitoring, fairness audit, LLM red-teaming, Demo Day.}{Drift detected (PSI \textbf{2.03}) before RMSE rose \textbf{44\%}; fairness fix cut the equalised-odds gap by \textbf{60\%} for 1.6 points of accuracy.}}
+\end{frame}
+
+\begin{frame}{Monday to Saturday: the project week}
+\transwipe[direction=0]
+\begin{tikzpicture}[day/.style={rounded corners=4pt,minimum width=2.0cm,minimum height=1.7cm,align=center,font=\small,text width=1.8cm,drop shadow}]
+  \foreach \d/\w/\c [count=\k] in {Mon/Explore \& baseline/sunA,Tue/Build the pipeline/sunB,Wed/Improve \& tune/sunC,Thu/Evaluate \& audit/sunD,Fri/Document \& reproduce/sunE,Sat/Demo \& release/sunF}{
+    \visible<\k->{\node[day,fill=\c!12,draw=\c,line width=1pt] at (2.2*\k,0) {{\color{\c}\bfseries\d}\par\w\par{\scriptsize 2--3 h}};}}
+  \visible<7->{\node[fill=warnC,text=white,rounded corners=3pt,font=\small\bfseries,inner sep=4pt] at (11.9,1.35) {Sat 23:59: Release \texttt{week-N}};}
+\end{tikzpicture}
+\par\vspace{8pt}
+\uncover<8->{\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{@{}l X l X@{}}
+\toprule
+\textbf{Wk} & \textbf{Homework project (real data)} & \textbf{Wk} & \textbf{Homework project (real data)}\\
+\midrule
+1 & Credit default risk scorer --- 30,000 bank clients & 4 & PolicyGPT on NEP 2020 + UGC/AICTE PDFs\\
+2 & Field-ready plant disease classifier --- PlantVillage + PlantDoc & 5 & Research analyst agent with a real LLM and MCP\\
+3 & Domain instruction-tuned LLM --- Qwen2.5 + LoRA & 6 & Ship your capstone to production\\
+\bottomrule
+\end{tabularx}}
+\end{frame}
+
+\begin{frame}{How every topic is taught}
+\transfade
+\centering
+\begin{tikzpicture}[st/.style={rounded corners=4pt,minimum width=1.7cm,minimum height=1.15cm,text width=1.55cm,align=center,font=\small\bfseries,text=white,drop shadow},
+   ar/.style={-{Stealth},line width=1.3pt,navy!50}]
+  \foreach \t/\c/\tc [count=\k] in {Definition/navy/gold,Example/dataC/white,Maths/skillC/white,Algorithm/gold/navy,Code/gray!60/white,{Apps \& products}/saffron/white,{Our result}/sunA/white}{
+    \visible<\k->{\node[st,fill=\c,text=\tc] (n\k) at (1.95*\k,0) {\t};}}
+  \foreach \k [evaluate=\k as \j using int(\k+1)] in {1,...,6}{\visible<\j->{\draw[ar] (n\k) -- (n\j);}}
+\end{tikzpicture}
+\par\vspace{14pt}
+\begin{columns}[T]
+\column{0.47\textwidth}\uncover<8->{\begin{bex}[Example: attention, Sunday 3]
+Define it in one line $\rightarrow$ work two tokens by hand $\rightarrow$ $\mathrm{softmax}(QK^\top/\sqrt{d_k})V$ $\rightarrow$ pseudocode $\rightarrow$ 10 lines of PyTorch $\rightarrow$ where ChatGPT uses it $\rightarrow$ our GPT's real loss curve.
+\end{bex}}
+\column{0.47\textwidth}\uncover<9->{\begin{bapp}[What you get for every Sunday]
+Colour-coded slides, elaborated student notes, an executed notebook with real outputs, and a Monday--Saturday project --- all on GitHub.
+\end{bapp}}
+\end{columns}
+\end{frame}
+
+%% =====================================================================
+%% 3. OUTCOMES
+%% =====================================================================
+\sectionslide{PART 3}{What you walk out with}{Skills, a portfolio, and a clear path into AI roles from 2026 to 2035.}
+
+\begin{frame}{Skills you will use with your own hands}
+\transfade
+\begin{tikzpicture}[sk/.style={rounded corners=5pt,text width=3.95cm,minimum height=2.15cm,align=left,inner sep=6pt,font=\small,drop shadow}]
+  \foreach \c/\h/\b/\x/\y [count=\k] in {
+    sunA/Data \& ML/{Pandas, scikit-learn, XGBoost, Optuna, SHAP, MLflow}/0/0,
+    sunB/Deep learning/{PyTorch, CNNs, ViT, Grad-CAM, quantisation, ONNX}/4.65/0,
+    sunC/LLM engineering/{GPT internals, tokenisers, LoRA/QLoRA, LLM evaluation, serving}/9.3/0,
+    sunD/Retrieval \& RAG/{Embeddings, FAISS, BM25 + hybrid, chunking, citations, RAGAS}/0/-2.55,
+    sunE/Agentic AI/{Tool calling, ReAct, MCP, critics, sandboxes, human approval}/4.65/-2.55,
+    sunF/Production \& trust/{FastAPI, Docker, CI/CD, drift, fairness, red-teaming}/9.3/-2.55}{
+    \visible<\k->{\node[sk,fill=\c!9,draw=\c,line width=1pt,anchor=north west] at (\x,\y) {{\color{\c}\large\bfseries \h}\par\smallskip\b};}}
+\end{tikzpicture}
+\par\vspace{4pt}\uncover<7->{\centering\small Plus Git and GitHub, technical writing, and presenting results to non-experts --- \textbf{90+ skills} in total.\par}
+\end{frame}
+
+\begin{frame}{Jobs you can target}
+\transwipe[direction=90]
+\begin{columns}[T]
+\column{0.32\textwidth}
+\begin{block}{Build AI}
+\begin{itemize}
+\item<1-> AI Engineer
+\item<1-> Machine Learning Engineer
+\item<1-> LLM / GenAI Engineer
+\item<1-> Agentic AI Engineer
+\item<1-> RAG / Search Engineer
+\end{itemize}
+\end{block}
+\column{0.32\textwidth}
+\uncover<2->{\begin{block}{Ship and run AI}
+\begin{itemize}
+\item MLOps Engineer
+\item Forward Deployed Engineer
+\item AI Product Engineer
+\item Computer Vision Engineer
+\item AI Solutions Architect (junior)
+\end{itemize}
+\end{block}}
+\column{0.32\textwidth}
+\uncover<3->{\begin{block}{Research, trust, found}
+\begin{itemize}
+\item Data Scientist
+\item Applied / Research Engineer
+\item Responsible AI Analyst
+\item AI Trainer / Educator
+\item AI Start-up Founder
+\end{itemize}
+\end{block}}
+\end{columns}
+\vspace{6pt}
+\uncover<4->{\begin{tcolorbox}[colback=goldlight,colframe=gold,arc=3pt,boxrule=0.8pt,top=3pt,bottom=3pt]\small
+\textbf{Where:} top AI and big-tech companies, AI start-ups, global capability centres (GCCs), research labs --- in India, the USA and Canada.
+\end{tcolorbox}}
+\end{frame}
+
+\begin{frame}{AI skill roadmap 2026--2035}
+\transfade
+\centering
+\begin{tikzpicture}[x=2.6cm,wv/.style={rounded corners=4pt,text width=2.3cm,minimum height=2.7cm,align=center,font=\scriptsize,anchor=north,drop shadow}]
+  \draw[line width=3pt,gold] (0.6,0) -- (5.4,0);
+  \foreach \yr/\c/\h/\b [count=\k] in {
+    2026--27/sunA/Agentic AI \& LLM engineering/{Agents, MCP, RAG, LoRA, evaluation --- \textbf{this course}},
+    2028--29/sunB/Multimodal \& embodied AI/{Vision-language-action, speech agents, robotics models},
+    2030--31/sunC/AI for science/{AI scientists that design and run experiments},
+    2032--33/sunD/Efficient \& edge AI/{On-device, energy-aware, federated, new compute},
+    2034--35/sunE/Trustworthy AI \& governance/{Alignment, auditing, regulation, human--AI teams}}{
+    \visible<\k->{\fill[\c] (\k,0) circle (5pt);
+      \node[font=\small\bfseries,text=\c] at (\k,0.45) {\yr};
+      \node[wv,fill=\c!9,draw=\c,line width=0.8pt] at (\k,-0.35) {{\color{\c}\bfseries\h}\par\smallskip\b};}}
+\end{tikzpicture}
+\par\vspace{6pt}
+\uncover<6->{\small\textbf{The skills that carry forward:} solid ML foundations, honest evaluation, data engineering, and responsible-AI judgement. Later waves are projections, not certainties.}
+\end{frame}
+
+\begin{frame}{Assessment, certificate and the GitHub rule}
+\transfade
+\begin{columns}[T]
+\column{0.5\textwidth}
+\begin{block}{How you are assessed}
+\small
+\begin{itemize}
+\item<1-> Sunday projects + weekly homework \hfill \textbf{50\%}
+\item<2-> Capstone P6: deploy, audit, pitch \hfill \textbf{30\%}
+\item<3-> Mentor and peer code reviews \hfill \textbf{10\%}
+\item<4-> Career Lab mock interview \hfill \textbf{10\%}
+\end{itemize}
+\end{block}
+\uncover<5->{\small\textbf{Certified} at 60\% and 5 of 6 Sundays attended; \textbf{Distinction} at 85\%. Each certificate carries a verification ID and your GitHub link.}
+\column{0.45\textwidth}
+\uncover<6->{\begin{bwarn}[Two deadlines, every week]
+\textbf{Sunday 18:00} --- tag \texttt{sunday-N}, Release, submit.\\[2pt]
+\textbf{Saturday 23:59} --- tag \texttt{week-N}, Release, submit.
+\end{bwarn}}
+\uncover<7->{\begin{bex}[Your portfolio]
+One public repository with 12 projects, each with a README, results, a model card and honest limits --- the first thing a hiring manager opens.
+\end{bex}}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Campuses and fees}
+\transwipe[direction=0]
+\centering
+\begin{tikzpicture}[cp/.style={rounded corners=6pt,minimum width=2.9cm,minimum height=2.2cm,align=center,text=white,font=\large\bfseries,drop shadow}]
+  \visible<1->{\node[cp,fill=saffron] at (0,0) {Hyderabad\\[2pt]{\normalfont\small India}};
+               \node[cp,fill=indgreen] at (3.3,0) {Shirdi\\[2pt]{\normalfont\small India}};
+               \node[fill=navy,text=gold,rounded corners=4pt,font=\Large\bfseries,inner sep=6pt] at (1.65,-1.75) {INR 50,000};}
+  \visible<2->{\node[cp,fill=sunF] at (7.4,0) {USA\\[2pt]{\normalfont\small venue on enrolment}};
+               \node[cp,fill=warnC] at (10.7,0) {Canada\\[2pt]{\normalfont\small venue on enrolment}};
+               \node[fill=navy,text=gold,rounded corners=4pt,font=\Large\bfseries,inner sep=6pt] at (9.05,-1.75) {US\$ 1,000};}
+\end{tikzpicture}
+\par\vspace{12pt}
+\uncover<3->{\begin{tcolorbox}[colback=goldlight,colframe=gold,arc=3pt,boxrule=0.8pt,top=4pt,bottom=4pt]\small
+\textbf{Fee includes:} all 30 hours, lab mentoring, cloud GPU credits for course work, every slide deck, notes and notebook, Demo Day, mock interview and certificate. \quad\textbf{Batch:} maximum 30 learners per campus, 1 mentor per 10 in BUILD hours.
+\end{tcolorbox}}
+\end{frame}
+
+\begin{frame}[plain]
+\transfade
+\begin{tikzpicture}[remember picture,overlay]
+  \fill[navy] (current page.north west) rectangle (current page.south east);
+  \fill[saffron] (current page.north west) rectangle ([yshift=-0.18cm]current page.north east);
+  \fill[indgreen] (current page.south west) rectangle ([yshift=0.18cm]current page.south east);
+  \node[fill=white,rounded corners=6pt,inner sep=6pt] at ([yshift=2.1cm]current page.center) {\includegraphics[height=2.1cm]{logo_transparent.png}};
+  \node[text=white,font=\fontsize{28}{32}\selectfont\bfseries] at ([yshift=0.25cm]current page.center) {Stop watching AI. Start building it.};
+  \visible<2->{\node[text=goldlight,font=\large,align=center] at ([yshift=-0.9cm]current page.center) {Six Sundays. Twelve projects. One portfolio that speaks for you.};}
+  \visible<3->{\node[fill=gold,text=navy,rounded corners=4pt,font=\large\bfseries,inner sep=7pt] at ([yshift=-2.2cm]current page.center) {Enrol: ceo@algoprofessor.com \quad$\cdot$\quad www.algoprofessor.com};}
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Sources for the market figures}
+\small
+\begin{itemize}
+\item World Economic Forum, \emph{The Future of Jobs Report 2025} (January 2025): 86\% of employers expect AI and information processing to transform their business by 2030; AI and machine-learning specialists are among the three fastest-growing jobs. \texttt{weforum.org/publications/the-future-of-jobs-report-2025}
+\item TeamLease Digital, \emph{Digital Skills \& Salary Primer FY2025--26} (August 2025): one qualified engineer for every ten open GenAI roles in India; AI talent gap projected at 53\% by 2026.
+\item Deloitte India and nasscom, \emph{Advancing India's AI Skills: Interventions and Programmes Needed}: AI talent demand rising from about 600,000--650,000 (2022) to over 1.25 million (2027).
+\end{itemize}
+\vspace{6pt}
+\footnotesize Course results quoted on slide ``What you build'' come from the executed notebooks in this repository.
+\end{frame}
+
+\end{document}

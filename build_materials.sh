@@ -17,3 +17,10 @@ for dir in "$ROOT"/sunday-0${1:-*}-*/; do
     done
   done
 done
+# Course introduction deck and syllabus (full build only)
+if [ -z "${1:-}" ]; then
+  ( cd "$ROOT/course-intro" && for i in 1 2; do pdflatex -interaction=nonstopmode -halt-on-error AlgoProfessor_AI_Scientist_Course_Intro.tex > /dev/null; done
+    rm -f *.aux *.log *.out *.nav *.snm *.toc *.vrb ); echo "built course-intro/AlgoProfessor_AI_Scientist_Course_Intro.pdf"
+  ( cd "$ROOT/syllabus" && for i in 1 2; do pdflatex -interaction=nonstopmode -halt-on-error AlgoProfessor_AI_Scientist_Syllabus.tex > /dev/null; done
+    rm -f *.aux *.log *.out *.toc ); echo "built syllabus/AlgoProfessor_AI_Scientist_Syllabus.pdf"
+fi
